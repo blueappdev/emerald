@@ -19,7 +19,7 @@ def error(*arguments):
     sys.exit(2)
 
 class MessageDialog(tk.simpledialog.Dialog):
-    def  __init__(self, parent, title = "titleString", text="messageString"):
+    def  __init__(self, parent, title = "title", text="message"):
         self.titleString = title
         self.messageString = text
         tk.simpledialog.Dialog.__init__(self,parent)
@@ -45,7 +45,7 @@ class MessageDialog(tk.simpledialog.Dialog):
 class FindDialog(tk.simpledialog.Dialog):
     def __init__(self,parent,defaultFindString = ""):
         self.defaultFindString = defaultFindString
-        tk.simpledialog.Dialog.__init__(self,parent)
+        tk.simpledialog.Dialog.__init__(self, parent)
 
     def body(self, master):
         self.title("Find")
@@ -184,7 +184,7 @@ class DiffViewer(tk.Frame):
         self.rightLabel.bind("<Key>", self.filterKey)
         self.rightLabel.bind("<Button-3>", self.popupRightMenu)
 
-        # connect scrollbars with widgets
+        # Connect scrollbars with widgets.
         self.leftVerticalScrollbar.config(command=self.yview)
         self.leftHorizontalScrollbar.config(command=self.xview)
         self.rightVerticalScrollbar.config(command=self.yview)
@@ -224,7 +224,6 @@ class DiffViewer(tk.Frame):
                     leftdelta=leftdelta + abs(d) + 1
                 if d>0:
                     rightdelta=rightdelta + abs(d) + 1
-
 
     def leftxset(self,a,b):
         if self.horizontalScrollbarUpdateInfo==40:
@@ -271,10 +270,10 @@ class DiffViewer(tk.Frame):
         else:
             assert(0)
 
-    def rightyset(self,a,b):
-        self.leftyset(a,b)
+    def rightyset(self, a, b):
+        self.leftyset(a, b)
 
-    def xview(self,*a):
+    def xview(self, *a):
         self.horizontalScrollbarUpdateInfo=20
         if len(a)==2:
             self.leftText.xview(a[0],a[1])
@@ -287,7 +286,7 @@ class DiffViewer(tk.Frame):
         self.mainFrame.update_idletasks()
         self.horizontalScrollbarUpdateInfo=10
 
-    def yview(self,*a):
+    def yview(self, *a):
         self.verticalScrollbarUpdateInfo=20
         if len(a)==2:
             self.leftText.yview(a[0],a[1])
@@ -319,30 +318,30 @@ class DiffViewer(tk.Frame):
         self.statusFrame.pack(side=tk.BOTTOM,fill=tk.X)
 
     def createMenubar(self):
-        menuBar = tk.Menu()
-        self.createFileMenu(menuBar)
-        self.createViewMenu(menuBar)
-        self.master.config(menu=menuBar)
+        newMenuBar = tk.Menu()
+        self.createFileMenu(newMenuBar)
+        self.createViewMenu(newMenuBar)
+        self.master.config(menu=newMenuBar)
 
     def createFileMenu(self, parentMenu):
-        m = tk.Menu(parentMenu, tearoff=0)
-        parentMenu.add_cascade(label="File", menu=m)
-        m.add_command(label="Exit", command=self.onFileExit)
+        newMenu = tk.Menu(parentMenu, tearoff=0)
+        parentMenu.add_cascade(label="File", menu=newMenu)
+        newMenu.add_command(label="Exit", command=self.onFileExit)
 
-    def createViewMenu(self,parentMenu):
-        m = tk.Menu(parentMenu, tearoff=0)
-        parentMenu.add_cascade(label="View", menu=m)
-        m.add_command(
+    def createViewMenu(self, parentMenu):
+        newMenu = tk.Menu(parentMenu, tearoff=0)
+        parentMenu.add_cascade(label="View", menu=newMenu)
+        newMenu.add_command(
                 label="Find...",
                 command=self.onViewFind,
                 accelerator="Ctrl+F")
-        m.add_command(
+        newMenu.add_command(
                 label="Find Again",
                 command=self.onViewFindAgain,
                 accelerator="F3")
 
-    def setStatus(self,s):
-        self.statusLabel["text"]=s
+    def setStatus(self, message):
+        self.statusLabel["text"] = message
 
     def createToolbar(self):
         self.buttonFrame=tk.Frame(self.master)
@@ -962,15 +961,14 @@ class DiffViewer(tk.Frame):
             if leftLineData[x][0] != rightLineData[x][0]:
                 break
             x += 1
-        # x points now to the first different character of the line
+        # x points now to the first different character of the line.
 
-        y=0
+        y = 0
         while y1 - y > x and y2 - y > x:
             if leftLineData[y1-y][0] != rightLineData[y2-y][0]:
                 break
             y += 1
-        # y points to first different character from the end
-        #print x,y,leftLineData[y][1],y1
+        # y points to first different character from the end of the line.
 
         xdleft = leftLineData[x][1]
         xdright = rightLineData[x][1]
@@ -978,7 +976,6 @@ class DiffViewer(tk.Frame):
         ydright = len(rightLine)-rightLineData[y2-y][1]-1
 
         result = (xdleft,ydleft,xdright,ydright)
-        #print "result=",result
         return result
 
 
@@ -1057,6 +1054,10 @@ class DiffTool:
         error('comparing directories not yet supported')
 
     def processRegularFiles(self):
+        if not os.path.exists(self.filename1):
+            error(self.filename1, 'not found.')
+        if not os.path.exists(self.filename2):
+            error(self.filename2, 'not found.')
         if self.areFilesIdentical():
             warn('The files are identical.')
             return 
