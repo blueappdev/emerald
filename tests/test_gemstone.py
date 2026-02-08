@@ -65,28 +65,33 @@ class GemStoneTests(unittest.TestCase):
         self.assertFalse(self.session.oopIsSpecial(37632513))
 
     def testCharToOop(self):
-        oop = self.session.charToOop(65)
-        self.assertEqual(oop, 16668)
+        result = self.session.charToOop(65)
+        self.assertEqual(result, 16668)
 
     def testDoubleToSmallSouble(self):
-        oop = self.session.doubleToSmallDouble(3.14)
-        self.assertEqual(oop, 9264444865456394742)
+        result = self.session.doubleToSmallDouble(3.14)
+        self.assertEqual(result, 9264444865456394742)
 
     def testI32ToOop(self):
-        oop = self.session.I32ToOop(3)
-        self.assertEqual(oop, gemstone.OOP_Three)
+        result = self.session.I32ToOop(3)
+        self.assertEqual(result, gemstone.OOP_Three)
 
     def testOopToChar(self):
-        oop = self.session.oopToChar(16668)
-        self.assertEqual(oop, 65)
+        result = self.session.oopToChar(16668)
+        self.assertEqual(result, 65)
 
     def testResolveSymbol(self):
-        oop = self.session.resolveSymbol('System')
-        self.assertEqual(oop, 76033)
+        result = self.session.resolveSymbol('System')
+        self.assertEqual(result, 76033)
+
+    def testResolveSymbolObj(self):
+        oop = self.session.newString('System')
+        result = self.session.resolveSymbolObj(oop)
+        self.assertEqual(result, 76033)
 
     def testExecuteFetchBytes(self):
-        result = self.session.executeFetchBytes(self.session, "'Hello','World'")
-        self.assertEqual(result, 'HelloWorld')
+        result = self.session.executeFetchBytes("'Hello', ' ', 'World'")
+        self.assertEqual(result, 'Hello World')
   
 if __name__ == '__main__':
     unittest.main(verbosity=0)

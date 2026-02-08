@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 #
-# gemconnect.py
+# gemstone.py
 #
 
 import os.path
@@ -121,6 +121,10 @@ class Interface:
         self.gciTsOopIsSpecial.restype = c_bool
         self.gciTsOopIsSpecial.argtypes = [OopType]
 
+        self.gciTsNewString = self.library.GciTsNewString
+        self.gciTsNewString.restype = OopType
+        self.gciTsNewString.argtypes = [GciSession, c_char_p, POINTER(GciErrSType)]
+
         self.gciTsOopToChar = self.library.GciTsOopToChar
         self.gciTsOopToChar.restype = c_int
         self.gciTsOopToChar.argtypes = [OopType]
@@ -215,7 +219,7 @@ class Session:
             print("execute_ SUCCESS")
         return result
 
-    def executeFetchBytes(self, session, aString): # -> String:
+    def executeFetchBytes(self, aString) -> str:
         self.print(f"executeFetchBytes({aString})")
         encodedString = aString.encode('utf-8')
         bufferSize = 1000000
@@ -306,6 +310,17 @@ class Session:
         if not self._interface.gciTsLogout(self._session_id, byref(error)):
             raise GciException(error)
 
+    def newString(self, str) -> OopType:
+        error = GciErrSType()
+        result = self._interface.gciTsNewString(
+                self._session_id, 
+                str.encode('utf-8'), 
+                byref(error))
+        if result == OOP_ILLEGAL:
+            raise GciException(error)
+        return result
+
+
     def oopIsSpecial(self, oop) -> c_bool:
         result = self._interface.gciTsOopIsSpecial(oop)
         return result
@@ -315,7 +330,7 @@ class Session:
         # should check for -1
         return result
 
-    def resolveSymbol(self, symbolName) -> OopType:
+    def resolveSymbol(self, symbolName : str) -> OopType:
         error = GciErrSType()
         result = self._interface.gciTsResolveSymbol(
                 self._session_id, 
@@ -326,9 +341,13 @@ class Session:
             raise GciException(error)
         return result
 
-    def resolveSymbolObj(self, session, symbolName) -> OopType:
+    def resolveSymbolObj(self, symbolName : OopType) -> OopType:
         error = GciErrSType()
-        result = self.gciTsResolveSymbolObj(session, symbolName, OOP_NIL, byref(error))
+        result = self._interface.gciTsResolveSymbolObj(
+                self._session_id, 
+                symbolName, 
+                OOP_NIL, 
+                byref(error))
         if result == OOP_ILLEGAL:
             raise GciException(error)
         return result
