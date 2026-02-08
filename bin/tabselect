@@ -56,11 +56,16 @@ class TabSelectTool(TabTool):
                 try:
                     index = self.header.index(name)
                 except ValueError:
-                    self.error(f'Column {name} not found')
+                    try:
+                        index = self.header_lowercase.index(name.lower())
+                    except ValueError:
+                        self.error(f'Column {name} not found')
             self.selectedIndexes.append(index)
 
     def processStream(self, stream):
         self.header = self.recordFrom(stream.readline())
+        self.header_lowercase = [each.lower() for each in self.header]
+
         self.setColumnIndexes()
         self.emitRecord(self.header)
         for line in stream:
