@@ -1,0 +1,69 @@
+#!/usr/bin/python3
+#
+# verifyEmeraldScripts 
+#
+
+import sys, os, filecmp, getopt
+
+class Verifier:
+    def __init__(self):
+        self.excludedExtensions = ['.pyc']
+    def printQuietly(self, *arguments):
+        if not self.beQuiet:
+            print(*arguments)
+
+    def error(self, *arguments):
+        print(*arguments)
+        exit(2)
+
+    def help(self):
+        print('verifyEmeraldScripts - compare emerald files with other versions in PATH.')
+        print('    verifyEmeraldScripts  [-hq]')
+        print('    -h       help')
+        print('    -q       quiet (only show information about different files)')
+        exit()
+
+    def process(self):
+        options, arguments = getopt.getopt(sys.argv[1:], 'qh')
+        self.beQuiet = False
+        for key, value in options:
+            if key == '-q':
+                self.beQuiet = True
+            elif key == '-h':
+                self.help()
+            else:
+                self.error(f'Unsupported option ({key}).')
+
+        myDirectory = os.path.dirname(sys.argv[0])
+        for dirpath, dirnames, filenames in os.walk(myDirectory):
+            for name in filenames:
+                root, extension = os.path.splitext(name)
+                if extension not in self.excludedExtensions:
+                    self.processFile(os.path.normpath(os.path.join(dirpath, name)))
+
+    def processFile(self, file):
+        self.printQuietly('Verify', file)
+        self.findFiles(file)
+
+    def findFiles(self, file):
+        path=os.environ['PATH'].split(':')
+        handle = os.open(file, os.O_RDONLY)
+        stat=os.fstat(handle)
+        os.close(handle)
+        for directory in set(path):
+            newFile = os.path.normpath(os.path.join(directory, file))
+            if not os.path.exists(newFile):
+                continue
+            handle = os.open(newFile, os.O_RDONLY)
+            newStat=os.fstat(handle)
+            os.close(handle)
+            if newStat.st_ino == stat.st_ino and newStat.st_dev == stat.st_dev:
+                continue
+            if (filecmp.cmp(newFile, file)):
+                self.printQuietly('Equal version', newFile)
+            else:
+                print('Different version', newFile)
+
+if __name__ == '__main__':
+    Verifier().process()
+

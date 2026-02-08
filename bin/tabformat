@@ -1,0 +1,72 @@
+#!/usr/bin/python3
+#
+# tabformat
+#
+
+import sys, os.path
+from libs.tablib import TabTool
+
+class TabFormatTool(TabTool):
+    def __init__(self,):
+        super().__init__()
+        self.applicationName = 'tabformat'
+
+    def help(self, *args):
+        self.warn(*args)
+        self.warn('tabformat - formats tabular file')
+        self.warn('tabformat [FILE, ...]')
+        self.warn('Reads input files or stdin and writes formatted table to stdout.')
+        sys.exit(2)
+
+    def processArguments(self, files):
+        if len(files) == 0:
+            # If no input file then read from stdin.
+            if sys.stdin.isatty():
+                self.error('no input files and no stdin')
+            self.processStream(sys.stdin)
+        else:
+            for file in files:
+                with open(file) as stream:
+                    self.processStream(stream)
+
+    def processStream(self, stream):
+        self.readRecords(stream)
+        self.calculateWidths()
+        self.writeRecords()
+
+    def readRecords(self, aStream):
+        self.records = []
+        for line in aStream:
+            line = line.strip()
+            if line == '':
+                continue
+            record = self.recordFrom(line)
+            self.records.append(record)
+
+    def calculateWidths(self):
+        maxRecordSize = max(len(each) for each in self.records)
+        self.widths = [0]*maxRecordSize
+        for record in self.records:
+            for i, value in enumerate(record):
+                self.widths[i] = max(self.widths[i], len(value))
+
+    def writeRecords(self):
+        for record in self.records:
+            self.writeRecord(record)
+
+    def shouldBeLeftAligned(self, str):
+        return any(ch.isalpha() for ch in str)
+
+    def writeRecord(self, aRecord):
+        newRecord = []
+        for value, width in zip(aRecord, self.widths):
+            if self.shouldBeLeftAligned(value):
+                newValue = value.ljust(width)
+            else:
+                newValue = value.rjust(width)
+            newRecord.append(newValue)
+        print(*newRecord)
+
+if __name__ == '__main__':
+    TabFormatTool().processCommandLine()
+

@@ -1,0 +1,70 @@
+#!/usr/bin/python3
+#
+# tabfilter
+#
+
+import sys, os.path
+import libs.tablib
+import libs.expression
+
+class TabFilterTool(libs.tablib.TabTool):
+    def __init__(self):
+        super().__init__()
+        self.applicationName = 'tabfilter'
+
+    def help(self, *args):
+        self.warn(*args)
+        self.warn('tabfilter - filter rows from tab separated file')
+        self.warn('tabfilter expression [file, ...]')
+        self.warn('Reads files or stdin and writes the filtered rows to stdout.')
+        self.warn('Examples')
+        self.warn('    tabfilter \'CATEGORY=\"public\"\' people.txt')
+        sys.exit(2)
+
+    def processArguments(self, arguments):
+        if len(arguments) == 0:
+            self.help('Missing columns spec')
+        expression, *files = arguments
+        self.setExpression(expression)
+        if len(files) == 0:
+            # If no input file then read from stdin.
+            if sys.stdin.isatty():
+                self.error('no input files and no stdin')
+            self.processStream(sys.stdin)
+        else:
+            for file in files:
+                with open(file) as stream:
+                    self.processStream(stream)
+
+    def setExpression(self, expression):
+        if os.path.exists(expression):
+            self.help('First argument must be a filter expression.')
+        self.expression = libs.expression.Expression(expression)
+
+    def processStream(self, stream):
+        self.header = self.recordFrom(stream.readline())
+        self.emitRecord(self.header)
+        for line in stream:
+            line = line.strip()
+            if line == '':
+                continue
+            record = self.recordFrom(line)
+            if self.matches(record):
+                self.emitRecord(record)
+
+    def emitRecord(self, record):
+        print('\t'.join(record))
+
+    def matches(self, record):
+        return self.expression.evaluate(self.makeContext(record))
+
+    def makeContext(self, record):
+        context = {}
+        for key, value in zip(self.header, record):
+            context[key] = value
+        return context
+
+
+if __name__ == '__main__':
+    TabFilterTool().processCommandLine()
+

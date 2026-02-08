@@ -1,0 +1,9 @@
+#!/usr/bin/bash
+#
+# gitdiff
+
+git difftool --no-prompt --extcmd=xdiff -b $*
+
+
+
+

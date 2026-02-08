@@ -1,0 +1,39 @@
+#!/usr/bin/python3
+#
+# tabheder
+#
+
+import sys, os.path
+import libs.tablib
+
+class TabHeaderTool(libs.tablib.TabTool):
+    def __init__(self):
+        super().__init__()
+        self.applicationName = 'tabfilter'
+
+    def help(self, *args):
+        self.warn(*args)
+        self.warn('tabheader - extract header from tab separated file')
+        self.warn('tabheader [file, ...]')
+        self.warn('Reads files or stdin and writes the filtered rows to stdout.')
+        sys.exit(2)
+
+    def processArguments(self, files):
+        if len(files) == 0:
+            # If no input file then read from stdin.
+            if sys.stdin.isatty():
+                self.error('no input files and no stdin')
+            self.processStream(sys.stdin)
+        else:
+            for file in files:
+                with open(file) as stream:
+                    self.processStream(stream)
+
+    def processStream(self, stream):
+        header = self.recordFrom(stream.readline())
+        for i,each in enumerate(header):
+            print(i+1, ': ', each, sep='')
+
+if __name__ == '__main__':
+    TabHeaderTool().processCommandLine()
+

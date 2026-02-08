@@ -1,0 +1,43 @@
+#!/usr/bin/python3
+#
+# packexcel
+#
+# Pack a directory into an xlsx Excel
+#
+
+import sys, zipfile, os.path, shutil
+
+class ExcelPacker:
+    def warning(self, *messages):
+        print(*messages)
+
+    def error(self, *messages):
+        self.warning(*messages)
+        sys.exit(2)
+
+    def processCommandLine(self, argv):
+        self.processArguments(argv[1:])
+ 
+    def processArguments(self, arguments):
+        for filename in arguments:
+            if not filename.endswith('.xlsx'):
+                filename = filename + '.xlsx'
+            self.currentFilename = filename
+            self.processCurrentFilename()
+
+    def processCurrentFilename(self):
+        print('Process', self.currentFilename)
+        self.unzipCurrentFilename()
+
+    def unzipCurrentFilename(self):
+        self.currentRootName, ext = os.path.splitext(self.currentFilename)
+        if ext != '.xlsx':
+            self.error('Only xlsx files are supported')
+        if os.path.exists(self.currentRootName):
+            shutil.rmtree(self.currentRootName)
+        with zipfile.ZipFile(self.currentFilename, 'r') as zip:
+            zip.extractall(self.currentRootName)
+
+if __name__ == '__main__':
+    ExcelUnpacker().processCommandLine(sys.argv)
+ 

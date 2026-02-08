@@ -1,0 +1,13 @@
+#!/usr/bin/bash
+#
+# git_delete_history 
+#
+
+set -e
+
+git checkout --orphan reorg_branch
+git add -A
+git commit -m 'Initial commit'
+git branch -D main
+git branch -m main
+git push --force origin main

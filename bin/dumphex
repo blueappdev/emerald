@@ -1,0 +1,42 @@
+#!/usr/bin/python3
+#
+# dumphex - dump hex representation of a binary file
+#
+
+import getopt, glob, sys
+
+def usage():
+    print("dumphex - dump hex representation of a binary file")
+
+def getCharacterRepresentation(byte):
+    return chr(byte) if 32 <= byte <= 127 else "."
+
+def processFile(file):
+    with open(file, "rb") as stream:
+        line = stream.read(16)
+        counter = 0
+        while len(line) > 0:
+            print(format(counter, 'X').rjust(4, "0") + ":", end=" ")
+            for byte in line:
+                print(format(byte, 'X').rjust(2, "0"), end=" ")
+            for each in range(len(line), 16):
+                print("  ", end=" ")
+            for byte in line:
+                print(getCharacterRepresentation(byte), end="")
+            print()
+            counter = counter + len(line)
+            line = stream.read(16)
+
+if __name__ == "__main__":
+    options, arguments = getopt.getopt(sys.argv[1:], "")
+    if arguments == []:
+        usage()
+        sys.exit(2)
+
+    for pattern in arguments:
+        files = glob.glob(pattern)
+        if files == []:
+             print("No files found for", pattern)
+        for each in files:
+            processFile(each)
+

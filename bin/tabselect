@@ -1,0 +1,80 @@
+#!/usr/bin/python3
+#
+# tabselect
+#
+
+import sys, os.path
+from libs.tablib import TabTool
+
+class TabSelectTool(TabTool):
+    def __init__(self):
+        super().__init__()
+        applicationName = 'tabselect'
+
+    def help(self, *args):
+        self.warn(*args)
+        self.warn('tabselect - select columns from tabular file')
+        self.warn('tabselect COL1[,COL2,COL3...] [inputfile.txt]')
+        self.warn('Reads input files or stdin and writes the specified columns to stdout.')
+        self.warn('Columns can be specified by name or by numeric index.')
+        self.warn('Examples')
+        self.warn('    tabselect NAME,AGE (reads from stdin)')
+        self.warn('    tabselect NAME,AGE people.txt')
+        self.warn('    tabselect 2,4,AGE people.txt')
+        sys.exit(2)
+
+    def processArguments(self, arguments):
+        if len(arguments) == 0:
+            self.help('Missing columns spec')
+        columns, *files = arguments
+        self.setSelectedColumns(columns)
+        if len(files) == 0:
+            # If no input file then read from stdin.
+            if sys.stdin.isatty():
+                self.error('no input files and no stdin')
+            self.processStream(sys.stdin)
+        else:
+            for file in files:
+                with open(file) as stream:
+                    self.processStream(stream)
+
+    def setSelectedColumns(self, columns):
+        if os.path.exists(columns):
+            self.help('First argument must be a column name or index.')
+        self.selectedNames = []
+        for column in columns.split(','):
+            self.selectedNames.append(column)
+
+    def setColumnIndexes(self):
+        self.selectedIndexes = []
+        for name in self.selectedNames:
+            if name.isdigit():
+                index = int(name)-1
+                if not 0 <= index < len(self.header):
+                    self.error(f'Column index {name} not found')
+            else:
+                try:
+                    index = self.header.index(name)
+                except ValueError:
+                    self.error(f'Column {name} not found')
+            self.selectedIndexes.append(index)
+
+    def processStream(self, stream):
+        self.header = self.recordFrom(stream.readline())
+        self.setColumnIndexes()
+        self.emitRecord(self.header)
+        for line in stream:
+            line = line.strip()
+            if line == '':
+                continue
+            self.emitRecord(self.recordFrom(line))
+
+    def emitRecord(self, aRecord):
+        newRecord = []
+        for index in self.selectedIndexes:
+            newRecord.append(aRecord[index])
+        print('\t'.join(newRecord))
+
+if __name__ == '__main__':
+    TabSelectTool().processCommandLine()
+

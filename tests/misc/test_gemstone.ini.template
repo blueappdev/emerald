@@ -1,0 +1,13 @@
+#
+# test_gemstone.ini.template
+#
+
+gemstone]
+gem_host=localhost
+stone=gs64stone
+gs_user=
+gs_password=
+netldi=gs64ldi
+host_user=
+host_password=
+
