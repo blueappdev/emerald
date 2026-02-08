@@ -1,0 +1,7 @@
+NAME	AGE
+Tom	35
+Harry	35
+Paul	77         
+Hans	24
+Tom	15
+

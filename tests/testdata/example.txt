@@ -1,4 +1,0 @@
-NAME	AGE
-Hans	24
-Tom	35
-Herry	35

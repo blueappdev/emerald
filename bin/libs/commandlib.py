@@ -29,7 +29,7 @@ class CommandLineTool:
         except KeyboardInterrupt:
             print('Interrupted ...')
             # 130 is the standard Unix exit code for a program
-            # terminated by SIGINT (Ctrl-C): 128 + signal number 2.`
+            # terminated by SIGINT (Ctrl-C): 128 + signal number 2.
             sys.exit(130)  
 
 
