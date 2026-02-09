@@ -198,6 +198,14 @@ class DiffViewer(tk.Frame):
         #
         self.mainFrame.pack(fill=tk.BOTH,expand=1)
 
+    def print(self, *arguments):
+        print(arguments)
+
+    def quietPrint(self, *arguments):
+        if self.quietMode:
+            return
+        self.print(arguments)
+
     def canvasChanged(self,event):
         # canvas size changed, re-paint all rectangles
         self.canvas.delete(tk.ALL)
@@ -777,17 +785,17 @@ class DiffViewer(tk.Frame):
             # print "diffRecords:", self.diffRecords
 
             if len(self.diffRecords)==0:
-                msg="No differences found."
-                print(msg)
-                self.setStatus(msg)
+                message="No differences found."
+                self.quietPrint(message)
+                self.setStatus(message)
             elif len(self.diffRecords)==1:
-                msg=str(len(self.diffRecords))+" difference found."
-                print(msg)
-                self.setStatus(msg)
+                message=str(len(self.diffRecords))+" difference found."
+                self.quietPrint(message)
+                self.setStatus(message)
             else:
-                msg=str(len(self.diffRecords))+" differences found."
-                print(msg)
-                self.setStatus(msg)
+                message=str(len(self.diffRecords))+" differences found."
+                self.quietPrint(message)
+                self.setStatus(message)
 
             self.diffRecords.reverse()
 
