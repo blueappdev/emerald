@@ -1064,8 +1064,8 @@ class DiffTool:
 
             # Compare files
             for f in files1:
-                path1 = os.path.join(root1, f)
-                path2 = os.path.join(root2, f)
+                path1 = os.path.normpath(os.path.join(root1, f))
+                path2 = os.path.normpath(os.path.join(root2, f))
                 if os.path.exists(path2):
                     if filecmp.cmp(path1, path2, shallow=False):
                         print(f"Same: {path1}")
@@ -1078,8 +1078,8 @@ class DiffTool:
             # Check for files only in dir2
             if os.path.exists(root2):
                 for f in os.listdir(root2):
-                    path2 = os.path.join(root2, f)
-                    path1 = os.path.join(root1, f)
+                    path2 = os.path.normpath(os.path.join(root2, f))
+                    path1 = os.path.normpath(os.path.join(root1, f))
                     if f not in files1 and os.path.isfile(path2):
                         print(f"Only in dir2: {path2}")
 
