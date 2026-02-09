@@ -3,8 +3,7 @@
 # xdiff
 #
 
-import os
-import sys
+import os, sys, filecmp, time
 import string
 import getopt
 import time
@@ -102,6 +101,7 @@ class FindDialog(tk.simpledialog.Dialog):
 
 class DiffViewer(tk.Frame):
     def __init__(self, master):
+        self.quietMode=False
         self.createPopupMenus()
         self.horizontalScrollbarUpdateInfo=10
         self.verticalScrollbarUpdateInfo=10
@@ -498,6 +498,7 @@ class DiffViewer(tk.Frame):
 
     def onFileExit(self):
         self.quit()
+        self.master.destroy()
 
     def findAction(self):
         if self.findIgnoreCase:
@@ -585,28 +586,28 @@ class DiffViewer(tk.Frame):
                     self.findString+" not found in "+self.findInWhatWindow+" window.")
 
 
-    def onViewFind(self,event=None):
-        dlg=FindDialog(self.master,defaultFindString=self.findString)
-        if dlg.findString is not None:
-            self.findString = dlg.findString
+    def onViewFind(self, event=None):
+        dialog=FindDialog(self.master, defaultFindString=self.findString)
+        if dialog.findString is not None:
+            self.findString = dialog.findString
         # Do not modify self.findString if "Cancel" was pressed in FindDialog.
-        if dlg.findString is not None and self.findString != "":
-            self.findInWhatWindow=dlg.findInWhatWindow.get()
-            self.findIgnoreCase=dlg.findIgnoreCase.get()
+        if dialog.findString is not None and self.findString != "":
+            self.findInWhatWindow = dialog.findInWhatWindow.get()
+            self.findIgnoreCase = dialog.findIgnoreCase.get()
             if self.findInWhatWindow=="right":
                 self.findData=rightData
                 self.findTextWidget = self.rightText
             else:
                 self.findData=self.leftData
                 self.findTextWidget = self.leftText
-            self.findDirection=dlg.findDirection.get()
+            self.findDirection = dialog.findDirection.get()
             if self.findDirection == 1:   # find forward
-                self.currentFindLine=0
+                self.currentFindLine = 0
             else:
-                self.currentFindLine=self.totalLines-1
+                self.currentFindLine = self.totalLines-1
             self.findAction()
 
-    def onViewFindAgain(self,dummyEvent=None):
+    def onViewFindAgain(self, dummyEvent=None):
         if self.findString is None or self.findString == "":
             self.onViewFind()
         else:
@@ -637,15 +638,15 @@ class DiffViewer(tk.Frame):
             self.rightPopupMenu.add_command(label="xemacs", command=self.xemacsRightFile)
             self.rightPopupMenu.add_command(label="vi", command=self.viRightFile)
 
-    def popupLeftMenu(self,ev):
+    def popupLeftMenu(self, event):
         self.unpostContextMenus()
-        self.leftPopupMenu.post(ev.x_root,ev.y_root)
+        self.leftPopupMenu.post(event.x_root, event.y_root)
 
-    def popupRightMenu(self,ev):
+    def popupRightMenu(self, event):
         self.unpostContextMenus()
-        self.rightPopupMenu.post(ev.x_root,ev.y_root)
+        self.rightPopupMenu.post(event.x_root, event.y_root)
 
-    def unpostContextMenus(self,ev=None):
+    def unpostContextMenus(self, event=None):
         self.leftPopupMenu.unpost()
         self.rightPopupMenu.unpost()
 
@@ -1032,16 +1033,19 @@ class DiffTool:
             if os.path.isdir(self.filename2):
                 self.processDirectories()
             elif os.path.isfile(self.filename2):
-                self.filename1 = os.path.join(self.filename1, os.path.basename(self.filename2))
-                self.processRegularFiles()
+                self.processRegularFiles(
+                        os.path.join(self.filename1, os.path.basename(self.filename2)),
+                        self.filename2)
             else:
                 error(self.filename2, 'is not a regular file or a directory.')
         elif os.path.isfile(self.filename1):
             if os.path.isdir(self.filename2):
-                self.filename2 = os.path.join(self.filename2, os.path.basename(self.filename1))
+                self.processRegularFiles(
+                        self.filename1,
+                        os.path.join(self.filename2, os.path.basename(self.filename1)))
                 self.processRegularFiles()
             elif os.path.isfile(self.filename2):
-                self.processRegularFiles()
+                self.processRegularFiles(self.filename1, self.filename2)
             else:
                 error(self.filename2, 'is not a regular file or a directory.')
         else:
@@ -1051,9 +1055,37 @@ class DiffTool:
         if self.areFilesIdentical():
             warn('The directories are identical.')
             return 
-        error('comparing directories not yet supported')
 
-    def processRegularFiles(self):
+        dir1 = self.filename1
+        dir2 = self.filename2
+
+        for root1, dirs1, files1 in os.walk(dir1):
+            rel_path = os.path.relpath(root1, dir1)
+            root2 = os.path.join(dir2, rel_path)
+
+            # Compare files
+            for f in files1:
+                path1 = os.path.join(root1, f)
+                path2 = os.path.join(root2, f)
+                if os.path.exists(path2):
+                    if filecmp.cmp(path1, path2, shallow=False):
+                        print(f"Same: {path1}")
+                    else:
+                        print(f"Different: {path1}")
+                        self.processRegularFiles(path1, path2)
+                else:
+                    print(f"Only in dir1: {path1}")
+
+            # Check for files only in dir2
+            if os.path.exists(root2):
+                for f in os.listdir(root2):
+                    path2 = os.path.join(root2, f)
+                    path1 = os.path.join(root1, f)
+                    if f not in files1 and os.path.isfile(path2):
+                        print(f"Only in dir2: {path2}")
+
+
+    def processRegularFiles(self, leftFilename, rightFilename):
         if not os.path.exists(self.filename1):
             error(self.filename1, 'not found.')
         if not os.path.exists(self.filename2):
@@ -1062,17 +1094,30 @@ class DiffTool:
             warn('The files are identical.')
             return 
         try:
-            self.root = tk.Tk()
+            root = tk.Tk()
         except tk.TclError as exception:
             print(exception)
             sys.exit(2)
 
-        self.root.title("xdiff")
+        root.title("xdiff")
 
-        self.viewer = DiffViewer(self.root)
+        self.viewer = DiffViewer(root)
+        self.viewer.quietMode = True
         self.viewer.ignoreBlankFlagString = self.ignoreBlankFlagString
-        self.viewer.viewFiles(self.filename1, self.filename2)
-        self.root.mainloop()
+        self.viewer.viewFiles(leftFilename, rightFilename)
+
+        self.myMainLoop(root)
+    def myMainLoop(self, root):
+        # Simulate mainloop with instant response for Ctrl-C
+        # Replaces root.mainloop() which is slow to react on Ctrl-C
+        try:
+            while root.winfo_exists():
+                root.update_idletasks()
+                root.update()   
+                time.sleep(0.3)        
+        except tk.TclError:
+            pass
+
 
     def areFilesIdentical(self):
         stat1 = os.stat(self.filename1)
