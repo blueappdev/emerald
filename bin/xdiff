@@ -3,10 +3,7 @@
 # xdiff
 #
 
-import os, sys, filecmp, time
-import string
-import getopt
-import time
+import os, sys, filecmp, time, string, getopt, time, difflib
 import tkinter as tk
 import tkinter.simpledialog
 
@@ -748,41 +745,7 @@ class DiffViewer(tk.Frame):
                 line=rightStream.readline()
             rightStream.close()
 
-            diffCommand = "/usr/bin/diff"
-
-            if self.ignoreBlankFlagString != "":
-                diffCommand = diffCommand + " " + self.ignoreBlankFlagString
-
-            diffCommand = diffCommand + " " + self.filename1 + " " + self.filename2
-
-            with os.popen(diffCommand) as stream:
-                for line in stream:
-                    line=line.rstrip()
-                    if (len(line)>=1 and
-                        line[0] != ">" and
-                        line[0] != "<" and
-                        line != "---"):
-                        for x in ["a","c","d"]:
-                            fields = line.split(x)
-                            assert(len(fields)==1 or len(fields)==2)
-                            if len(fields)==2:
-                                leftfields=fields[0].split(",")
-                                assert(len(leftfields)<=2)
-                                a1=int(leftfields[0])
-                                if len(leftfields)==1:
-                                    a2=a1
-                                else:
-                                    a2=int(leftfields[1])
-                                rightfields=fields[1].split(",")
-                                assert(len(rightfields)<=2)
-                                b1=int(rightfields[0])
-                                if len(rightfields)==1:
-                                    b2=b1
-                                else:
-                                    b2=int(rightfields[1])
-                                self.diffRecords.append((x,a1,a2,b1,b2))
-
-            # print "diffRecords:", self.diffRecords
+            self.calculateDiffRecords()
 
             if len(self.diffRecords)==0:
                 message="No differences found."
@@ -944,6 +907,34 @@ class DiffViewer(tk.Frame):
             sys.stderr.write(exstr+"\n")
             MessageDialog(self, "xdiff IO Error", exstr)
             sys.exit(1)
+
+    def calculateDiffRecords(self):
+
+        self.diffRecords = []
+
+        with open(self.filename1, "r") as stream:
+            left = stream.readlines()
+
+        with open(self.filename2, "r") as stream:
+            right = stream.readlines()
+
+        # optional blank ignoring like -B
+        if self.ignoreBlankFlagString:
+            def norm(x): return "" if x.strip()=="" else x
+            left  = [norm(x) for x in left]
+            right = [norm(x) for x in right]
+
+        matcher = difflib.SequenceMatcher(None, left, right)
+
+        for tag, i1, i2, j1, j2 in matcher.get_opcodes():
+            if tag == "replace":
+                self.diffRecords.append(("c", i1+1, i2, j1+1, j2))
+            elif tag == "delete":
+                self.diffRecords.append(("d", i1+1, i2, j1, j1))
+            elif tag == "insert":
+                self.diffRecords.append(("a", i1, i1, j1+1, j2))
+
+        #print("diffRecords:", self.diffRecords)
 
     def prepareLineForDiff(self, line):
         lineData = []
