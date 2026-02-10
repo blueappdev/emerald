@@ -211,7 +211,7 @@ class DiffViewer(tk.Frame):
         leftdelta=0
         rightdelta=0
         for t,lefta,leftb,righta,rightb in self.diffRecords:
-            assert(self.leftText.index(tk.END) == self.rightText.index(tk.END))
+            assert self.leftText.index(tk.END) == self.rightText.index(tk.END)
             x,y=map(int, self.leftText.index(tk.END).split("."))
             a=max(lefta+leftdelta,righta+rightdelta)
             b=a+max(leftb-lefta,rightb-righta)+1
@@ -264,7 +264,7 @@ class DiffViewer(tk.Frame):
             self.mainFrame.update_idletasks()
             self.horizontalScrollbarUpdateInfo=10
         else:
-            assert(0)
+            raise Exception('leftxset')
 
     def rightxset(self,a,b):
         self.leftxset(a,b)
@@ -288,7 +288,7 @@ class DiffViewer(tk.Frame):
             self.mainFrame.update_idletasks()
             self.verticalScrollbarUpdateInfo=10
         else:
-            assert(0)
+            raise Exception('leftyset')
 
     def rightyset(self, a, b):
         self.leftyset(a, b)
@@ -302,7 +302,7 @@ class DiffViewer(tk.Frame):
             self.leftText.xview(a[0],a[1],a[2])
             self.rightText.xview(a[0],a[1],a[2])
         else:
-            assert(0)
+            raise Exception('xview')
         self.mainFrame.update_idletasks()
         self.horizontalScrollbarUpdateInfo=10
 
@@ -315,7 +315,7 @@ class DiffViewer(tk.Frame):
             self.leftText.yview(a[0],a[1],a[2])
             self.rightText.yview(a[0],a[1],a[2])
         else:
-            assert(0)
+            raise Exception('yview')
         self.mainFrame.update_idletasks()
         self.verticalScrollbarUpdateInfo=10
 
@@ -460,9 +460,7 @@ class DiffViewer(tk.Frame):
 
             n=self.leftText.tag_names("%d.0" % a)
             n=list(filter(lambda x: x != "sel" and x != "highlight",n))
-            if len(n)!=1:
-                print(n)
-                assert(len(n)==1)
+            assert len(n) == 1
             t="dark"+n[0]
             if t == "darkbluediffchar":
                 t="darkblue"
@@ -481,26 +479,26 @@ class DiffViewer(tk.Frame):
             if t == "darkblue":
                 leftString = self.leftData[a-1][0]
                 rightString = self.rightData[a-1][0]
-                xdleft,ydleft,xdright,ydright = self.oneLineDiff(leftString,rightString)
+                xdleft, ydleft, xdright, ydright = self.oneLineDiff(leftString, rightString)
                 x = xdleft
                 y = ydleft
 
             if self.leftText.bbox("%d.%d" % (b,x)) is None or self.leftText.bbox("%d.%d" % (a,x)) is None:
-                self.verticalScrollbarUpdateInfo=40
-                self.horizontalScrollbarUpdateInfo=40
+                self.verticalScrollbarUpdateInfo = 40
+                self.horizontalScrollbarUpdateInfo = 40
                 if direction == 1:
-                    self.leftText.see("%d.%d" % (min(b+10000,self.totalLines),x))
-                    self.rightText.see("%d.%d" % (min(b+10000,self.totalLines),x))
-                    self.leftText.see("%d.%d" % (a,x))
-                    self.rightText.see("%d.%d" % (a,x))
+                    self.leftText.see("%d.%d" % (min(b+10000, self.totalLines), x))
+                    self.rightText.see("%d.%d" % (min(b+10000, self.totalLines), x))
+                    self.leftText.see("%d.%d" % (a, x))
+                    self.rightText.see("%d.%d" % (a, x))
                 elif direction == -1:
-                    self.leftText.see("%d.%d" % (max(a-10000,0),x))
-                    self.rightText.see("%d.%d" % (max(a-10000,0),x))
-                    self.leftText.see("%d.%d" % (b,x))
-                    self.rightText.see("%d.%d" % (b,x))
+                    self.leftText.see("%d.%d" % (max(a-10000, 0), x))
+                    self.rightText.see("%d.%d" % (max(a-10000, 0), x))
+                    self.leftText.see("%d.%d" % (b, x))
+                    self.rightText.see("%d.%d" % (b, x))
                 self.mainFrame.update_idletasks()
-                self.verticalScrollbarUpdateInfo=10
-                self.horizontalScrollbarUpdateInfo=10
+                self.verticalScrollbarUpdateInfo = 10
+                self.horizontalScrollbarUpdateInfo = 10
 
             if self.navigationIndex==0:
                 self.buttonFirstDiff.config(state=tk.DISABLED)
@@ -737,10 +735,9 @@ class DiffViewer(tk.Frame):
 
         with open(self.filename1) as stream:
             self.leftLines = stream.readlines()
+
         with open(self.filename2) as stream:
             self.rightLines  = stream.readlines()
-
-        self.diffRecords=[]
 
         self.leftLabel.insert(tk.END, self.filename1)
         self.leftData=[[line, None] for line in self.leftLines]
@@ -748,78 +745,75 @@ class DiffViewer(tk.Frame):
         self.rightLabel.insert(tk.END, self.filename2)
         self.rightData=[[line, None] for line in self.rightLines]
 
-        self.calculateDiffRecords()
-
-        if len(self.diffRecords)==0:
+        self.setDiffRecords()
+        
+        numberOfDifferences = len(self.diffRecords)
+        if numberOfDifferences == 0:
             message="No differences found."
-            self.quietPrint(message)
-            self.setStatus(message)
-        elif len(self.diffRecords)==1:
-            message=str(len(self.diffRecords))+" difference found."
-            self.quietPrint(message)
-            self.setStatus(message)
+        elif numberOfDifferences == 1:
+            message="1 difference found."
         else:
-            message=str(len(self.diffRecords))+" differences found."
-            self.quietPrint(message)
-            self.setStatus(message)
+            message= f"{numberOfDifferences} differences found."
+        self.quietPrint(message)
+        self.setStatus(message)
 
         self.diffRecords.reverse()
 
         # First traversal does not modify the diffRecords.
-        for t,a1,a2,b1,b2 in self.diffRecords:
-            if t=="a":
+        for t, a1, a2, b1, b2 in self.diffRecords:
+            if t == "a":
                 # Something that only exists on the right side.
-                assert(a1==a2)
-                assert(b1<=b2)
-                i=b1
-                while i<=b2:
-                    self.rightData[i-1][1]="green"
-                    i=i+1
+                assert a1==a2
+                assert b1<=b2
+                i = b1
+                while i <= b2:
+                    self.rightData[i-1][1] = "green"
+                    i = i + 1
 
             if t=="d":
                 # Something that only exists on the left side.
-                assert(b1==b2)
-                assert(a1<=a2)
+                assert b1==b2
+                assert a1<=a2
                 i=a1
                 while i<=a2:
                     self.leftData[i-1][1]="red"
-                    i=i+1
+                    i = i + 1
 
             if t=="c":
                 # Something that exists on both sides.
-                assert(a1<=a2)
-                assert(b1<=b2)
+                assert a1<=a2
+                assert b1<=b2
                 i=a1
                 while i<=a2:
                     self.leftData[i-1][1]="blue"
-                    i=i+1
+                    i = i + 1
                 i=b1
                 while i<=b2:
                     self.rightData[i-1][1]="blue"
-                    i=i+1
+                    i = i + 1
 
         # Second traversal adds the added and deleted fragments.
-        for t,a1,a2,b1,b2 in self.diffRecords:
+        for t, a1, a2, b1, b2 in self.diffRecords:
             if t=="a":
                     # Something that only exists on the right side.
-                    assert(a1==a2)
-                    assert(b1<=b2)
-                    i=b1
+                    assert a1==a2
+                    assert b1<=b2
+                    i = b1
                     while i<=b2:
                         self.leftData.insert(a1,["\n","green"])
                         i=i+1
             if t=="d":
                     # Something that only exists on the left side.
-                    assert(b1==b2)
-                    assert(a1<=a2)
+                    assert b1==b2
+                    assert a1<=a2
                     i=a1
                     while i<=a2:
                         self.rightData.insert(b1,["\n","red"])
                         i=i+1
             if t=="c":
                     # Something that changed between the two sides.
-                    assert(a1<=a2)
-                    assert(b1<=b2)
+                    assert a1<=a2
+                    assert b1<=b2
                     if a2-a1 < b2-b1:
                         i=b1+a2-a1
                         while i<b2:
@@ -878,21 +872,20 @@ class DiffViewer(tk.Frame):
         self.rightText.tag_raise(tk.SEL)  # SEL overrides all other tags
         self.rightText.tag_config(tk.SEL, background="black", foreground="white")
 
-        assert(len(self.leftData)==self.totalLines)
-        assert(len(self.rightData)==self.totalLines)
+        assert len(self.leftData) == self.totalLines
+        assert len(self.rightData) == self.totalLines
 
         lineNumber=0
         while lineNumber<self.totalLines:
             leftLine,leftTag=self.leftData[lineNumber]
             rightLine,rightTag=self.rightData[lineNumber]
-            assert(leftTag==rightTag)
+            assert leftTag==rightTag
             if (leftTag == "blue" and
                 leftLine != "" and leftLine != "\n" and
                 rightLine != "" and rightLine != "\n"):
                 xdleft, ydleft, xdright, ydright = self.oneLineDiff(leftLine, rightLine)
                 # xdleft points now to the first different character of the line
                 # ydleft points to first different character from the end
-
                 self.leftText.insert(tk.END, leftLine[:xdleft], "blue")
                 self.leftText.insert(tk.END, leftLine[xdleft:len(leftLine)-ydleft], "bluediffchar")
                 self.leftText.insert(tk.END, leftLine[len(leftLine)-ydleft:], "blue")
@@ -913,7 +906,7 @@ class DiffViewer(tk.Frame):
             return str.rstrip()
         return str
 
-    def calculateDiffRecords(self):
+    def setDiffRecords(self):
         self.diffRecords = []
         left = [self.normalize(line) for line in self.leftLines]
         right = [self.normalize(line) for line in self.rightLines]
@@ -926,52 +919,82 @@ class DiffViewer(tk.Frame):
             elif tag == "insert":
                 self.diffRecords.append(("a", i1, i1, j1+1, j2))
 
-    def prepareLineForDiff(self, line):
-        lineData = []
-        for i in range(len(line)):
-            ch = line[i]
-            if self.ignoreAllBlanks:
-                if ch not in [ " ", "\t", "\r", "\n" ]:
-                    lineData.append((ch,i))
-            else:
-                lineData.append((ch,i))
-        #print lineData
-        return lineData
+    def first_diff(self, a, b):
+        assert (a != b)
+        for i in range(min(len(a),len(b))):
+            if a[i] != b[i]:
+                return i
+            i = i + 1
+        return i
 
+    def last_diff(self, a, b):
+        return self.first_diff(a[::-1], b[::-1])
 
-    def oneLineDiff(self, leftLine, rightLine):
-        if leftLine == rightLine:
-            return(0, 0, 0, 0)
-        leftChunks = re.findall(r'\s+|\S+', leftLine)
-        rightChunks = re.findall(r'\s+|\S+', rightLine)
-
-        leftLineData = self.prepareLineForDiff(leftLine)
-        rightLineData = self.prepareLineForDiff(rightLine)
-        x = 0
-        y1 = len(leftLineData)-1
-        y2 = len(rightLineData)-1
-        xmax = min(y1, y2)
-        while x <= xmax:
-            if leftLineData[x][0] != rightLineData[x][0]:
-                break
-            x += 1
-        # x points to the first different character of the line.
-
-        y = 0
-        while y1 - y > x and y2 - y > x:
-            if leftLineData[y1-y][0] != rightLineData[y2-y][0]:
-                break
-            y += 1
-        # y points to last different character of the line.
-
-        xdleft = leftLineData[x][1]
-        xdright = rightLineData[x][1]
-        ydleft = len(leftLine)-leftLineData[y1-y][1]-1
-        ydright = len(rightLine)-rightLineData[y2-y][1]-1
-
-        result = (xdleft, ydleft, xdright, ydright)
+    def splitTrailingBlanks(self, str):
+        i = -1 
+        while str[i].isspace():
+            i -= 1
+        result = str[:i+1], str[i+1:]
         return result
 
+    def splitChunks(self, str):
+        return re.findall(r'\s+|\S+', str)
+
+    def indexesOfFirstDifferentCharacter(self, leftLine, rightLine):
+        assert self.ignoreAllBlanks
+        leftChunks = self.splitChunks(leftLine)
+        rightChunks = self.splitChunks(rightLine)
+        leftIndex = 0
+        rightIndex = 0
+        firstDifferentLeft = 0
+        firstDifferentRight = 0
+        if leftChunks[leftIndex].isspace():
+            firstDifferentLeft += len(leftChunks[leftIndex])
+            leftIndex = leftIndex+1
+        if rightChunks[rightIndex].isspace():
+            firstDifferentRight += len(rightChunks[rightIndex])
+            rightIndex = rightIndex+1
+        while True:
+            leftChunk = leftChunks[leftIndex]
+            rightChunk = rightChunks[rightIndex]
+            if leftChunk.isspace():
+                leftChunk = ' '
+            if rightChunk.isspace():
+                rightChunk = ' '
+            if leftChunk == rightChunk:
+                firstDifferentLeft += len(leftChunks[leftIndex])
+                leftIndex += 1
+                firstDifferentRight += len(rightChunks[rightIndex])
+                rightIndex += 1
+            else:
+                i = self.first_diff(leftChunks[leftIndex], rightChunks[rightIndex])
+                firstDifferentLeft += i
+                firstDifferentRight += i
+                break
+        return firstDifferentLeft, firstDifferentRight
+
+    def indexesOfLastDifferentCharacter(self, leftLine, rightLine):
+        return self.indexesOfFirstDifferentCharacter(leftLine[::-1], rightLine[::-1])
+
+    def oneLineDiff(self, leftLine, rightLine):
+        if self.ignoreAllBlanks:
+            firstDifferentLeft, firstDifferentRight = self.indexesOfFirstDifferentCharacter(leftLine, rightLine)
+            lastDifferentLeft, lastDifferentRight = self.indexesOfLastDifferentCharacter(leftLine, rightLine)
+            return firstDifferentLeft, lastDifferentLeft, firstDifferentRight, lastDifferentRight
+        elif self.ignoreTrailingBlanks:
+            leftContent, leftBlanks = self.splitTrailingBlanks(leftLine)
+            rightContent, rightBlanks = self.splitTrailingBlanks(rightLine)
+            if leftContent == rightContent:
+                return (0,0,0,0)
+            first = self.first_diff(leftContent, rightContent)
+            last = self.last_diff(leftContent, rightContent)
+            return (first, last+len(leftBlanks), first, last+len(rightBlanks))
+        else:
+            if leftLine == rightLine:
+                return (0,0,0,0)
+            first = self.first_diff(leftLine, rightLine)
+            last = self.last_diff(leftLine, rightLine)
+            return (first, last, first, last)
 
 class DiffTool:
     def __init__(self):
