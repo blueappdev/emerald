@@ -217,17 +217,32 @@ class DiffViewer(tk.Frame):
             b=a+max(leftb-lefta,rightb-righta)+1
             #print t,lefta,"(",lefta+leftdelta,")",leftb,righta,"(",righta+rightdelta,")",rightb,a,b
             if t=="a":
-                self.canvas.create_rectangle(0,(a-1)*event.height/x,14,(b-1)*event.height/x,fill="red",outline="red")
+                self.canvas.create_rectangle(
+                        0,
+                        (a-1)*event.height/x,14,
+                        (b-1)*event.height/x,
+                        fill="green",
+                        outline="green")
                 leftdelta=leftdelta + rightb - righta + 1
             if t=="d":
-                self.canvas.create_rectangle(0,(a-1)*event.height/x,14,(b-1)*event.height/x,fill="green",outline="green")
+                self.canvas.create_rectangle(
+                        0,(a-1)*event.height/x,
+                        14,
+                        (b-1)*event.height/x,
+                        fill="red",
+                        outline="red")
                 rightdelta=rightdelta + leftb - lefta + 1
             if t=="c":
-                self.canvas.create_rectangle(0,(a-1)*event.height/x,14,(b-1)*event.height/x,fill="blue",outline="blue")
+                self.canvas.create_rectangle(0,
+                        (a-1)*event.height/x,
+                        14,
+                        (b-1)*event.height/x,
+                        fill="blue",
+                        outline="blue")
                 d=(leftb - lefta) - (rightb - righta)
-                if d<0:
+                if d < 0:
                     leftdelta=leftdelta + abs(d) + 1
-                if d>0:
+                if d > 0:
                     rightdelta=rightdelta + abs(d) + 1
 
     def leftxset(self,a,b):
@@ -758,7 +773,7 @@ class DiffViewer(tk.Frame):
                 assert(b1<=b2)
                 i=b1
                 while i<=b2:
-                    self.rightData[i-1][1]="red"
+                    self.rightData[i-1][1]="green"
                     i=i+1
 
             if t=="d":
@@ -767,7 +782,7 @@ class DiffViewer(tk.Frame):
                 assert(a1<=a2)
                 i=a1
                 while i<=a2:
-                    self.leftData[i-1][1]="green"
+                    self.leftData[i-1][1]="red"
                     i=i+1
 
             if t=="c":
@@ -791,7 +806,7 @@ class DiffViewer(tk.Frame):
                     assert(b1<=b2)
                     i=b1
                     while i<=b2:
-                        self.leftData.insert(a1,["\n","red"])
+                        self.leftData.insert(a1,["\n","green"])
                         i=i+1
             if t=="d":
                     # Something that only exists on the left side.
@@ -799,7 +814,7 @@ class DiffViewer(tk.Frame):
                     assert(a1<=a2)
                     i=a1
                     while i<=a2:
-                        self.rightData.insert(b1,["\n","green"])
+                        self.rightData.insert(b1,["\n","red"])
                         i=i+1
             if t=="c":
                     # Something that changed between the two sides.
