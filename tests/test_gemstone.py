@@ -92,6 +92,10 @@ class GemStoneTests(unittest.TestCase):
     def testExecuteFetchBytes(self):
         result = self.session.executeFetchBytes("'Hello', ' ', 'World'")
         self.assertEqual(result, 'Hello World')
+
+    def testPerformFetchBytes(self):
+        result = self.session.performFetchBytes(26, 'printString', [])
+        self.assertEqual(result, '555')
   
 if __name__ == '__main__':
     unittest.main(verbosity=0)

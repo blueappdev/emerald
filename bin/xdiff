@@ -3,7 +3,7 @@
 # xdiff
 #
 
-import os, sys, filecmp, time, string, getopt, time, difflib
+import os, sys, filecmp, string, getopt, time, difflib, re
 import tkinter as tk
 import tkinter.simpledialog
 
@@ -466,7 +466,7 @@ class DiffViewer(tk.Frame):
             if t == "darkblue":
                 leftString = self.leftData[a-1][0]
                 rightString = self.rightData[a-1][0]
-                xdleft,ydleft,xdright,ydright = self.onelinediff(leftString,rightString)
+                xdleft,ydleft,xdright,ydright = self.oneLineDiff(leftString,rightString)
                 x = xdleft
                 y = ydleft
 
@@ -720,212 +720,189 @@ class DiffViewer(tk.Frame):
         self.filename1 = filename1
         self.filename2 = filename2
 
+        with open(self.filename1) as stream:
+            self.leftLines = stream.readlines()
+        with open(self.filename2) as stream:
+            self.rightLines  = stream.readlines()
+
         self.diffRecords=[]
 
-        try:
-            self.leftLabel.insert(tk.END, self.filename1)
-            self.filename1 = self.filename1
+        self.leftLabel.insert(tk.END, self.filename1)
+        self.leftData=[[line, None] for line in self.leftLines]
 
-            self.leftData=[]
-            leftStream=open(self.filename1)
-            line=leftStream.readline()
-            while line != "":
-                self.leftData.append([line,None])
-                line=leftStream.readline()
-            leftStream.close()
+        self.rightLabel.insert(tk.END, self.filename2)
+        self.rightData=[[line, None] for line in self.rightLines]
 
-            self.rightLabel.insert(tk.END, self.filename2)
+        self.calculateDiffRecords()
 
-            self.rightData=[]
-            self.rightData = self.rightData
-            rightStream=open(self.filename2)
-            line=rightStream.readline()
-            while line != "":
-                self.rightData.append([line,None])
-                line=rightStream.readline()
-            rightStream.close()
+        if len(self.diffRecords)==0:
+            message="No differences found."
+            self.quietPrint(message)
+            self.setStatus(message)
+        elif len(self.diffRecords)==1:
+            message=str(len(self.diffRecords))+" difference found."
+            self.quietPrint(message)
+            self.setStatus(message)
+        else:
+            message=str(len(self.diffRecords))+" differences found."
+            self.quietPrint(message)
+            self.setStatus(message)
 
-            self.calculateDiffRecords()
+        self.diffRecords.reverse()
 
-            if len(self.diffRecords)==0:
-                message="No differences found."
-                self.quietPrint(message)
-                self.setStatus(message)
-            elif len(self.diffRecords)==1:
-                message=str(len(self.diffRecords))+" difference found."
-                self.quietPrint(message)
-                self.setStatus(message)
-            else:
-                message=str(len(self.diffRecords))+" differences found."
-                self.quietPrint(message)
-                self.setStatus(message)
+        # First traversal does not modify the diffRecords.
+        for t,a1,a2,b1,b2 in self.diffRecords:
+            if t=="a":
+                # Something that only exists on the right side.
+                assert(a1==a2)
+                assert(b1<=b2)
+                i=b1
+                while i<=b2:
+                    self.rightData[i-1][1]="red"
+                    i=i+1
 
-            self.diffRecords.reverse()
+            if t=="d":
+                # Something that only exists on the left side.
+                assert(b1==b2)
+                assert(a1<=a2)
+                i=a1
+                while i<=a2:
+                    self.leftData[i-1][1]="green"
+                    i=i+1
 
-            # First traversal does not modify the diffRecords.
-            for t,a1,a2,b1,b2 in self.diffRecords:
-                if t=="a":
+            if t=="c":
+                # Something that exists on both sides.
+                assert(a1<=a2)
+                assert(b1<=b2)
+                i=a1
+                while i<=a2:
+                    self.leftData[i-1][1]="blue"
+                    i=i+1
+                i=b1
+                while i<=b2:
+                    self.rightData[i-1][1]="blue"
+                    i=i+1
+
+        # Second traversal adds the added and deleted fragments.
+        for t,a1,a2,b1,b2 in self.diffRecords:
+            if t=="a":
                     # Something that only exists on the right side.
                     assert(a1==a2)
                     assert(b1<=b2)
                     i=b1
                     while i<=b2:
-                        self.rightData[i-1][1]="red"
+                        self.leftData.insert(a1,["\n","red"])
                         i=i+1
-
-                if t=="d":
+            if t=="d":
                     # Something that only exists on the left side.
                     assert(b1==b2)
                     assert(a1<=a2)
                     i=a1
                     while i<=a2:
-                        self.leftData[i-1][1]="green"
+                        self.rightData.insert(b1,["\n","green"])
                         i=i+1
-
-                if t=="c":
-                    # Something that exists on both sides.
+            if t=="c":
+                    # Something that changed between the two sides.
                     assert(a1<=a2)
                     assert(b1<=b2)
-                    i=a1
-                    while i<=a2:
-                        self.leftData[i-1][1]="blue"
-                        i=i+1
-                    i=b1
-                    while i<=b2:
-                        self.rightData[i-1][1]="blue"
-                        i=i+1
-
-            # Second traversal adds the added and deleted fragments.
-            for t,a1,a2,b1,b2 in self.diffRecords:
-                if t=="a":
-                        # Something that only exists on the right side.
-                        assert(a1==a2)
-                        assert(b1<=b2)
-                        i=b1
-                        while i<=b2:
-                            self.leftData.insert(a1,["\n","red"])
+                    if a2-a1 < b2-b1:
+                        i=b1+a2-a1
+                        while i<b2:
+                            self.leftData.insert(a2,["\n","blue"])
                             i=i+1
-                if t=="d":
-                        # Something that only exists on the left side.
-                        assert(b1==b2)
-                        assert(a1<=a2)
-                        i=a1
-                        while i<=a2:
-                            self.rightData.insert(b1,["\n","green"])
+                    elif a2-a1 > b2-b1:
+                        i=a1+b2-b1
+                        while i<a2:
+                            self.rightData.insert(b2,["\n","blue"])
                             i=i+1
-                if t=="c":
-                        # Something that changed between the two sides.
-                        assert(a1<=a2)
-                        assert(b1<=b2)
-                        if a2-a1 < b2-b1:
-                            i=b1+a2-a1
-                            while i<b2:
-                                self.leftData.insert(a2,["\n","blue"])
-                                i=i+1
-                        elif a2-a1 > b2-b1:
-                            i=a1+b2-b1
-                            while i<a2:
-                                self.rightData.insert(b2,["\n","blue"])
-                                i=i+1
 
-            self.diffRecords.reverse()   # For canvasChanged in ascending order.
+        self.diffRecords.reverse()   # For canvasChanged in ascending order.
 
-            lineNumber=1
-            oldTag=None
-            a=None
-            b=None
-            for x,t in self.leftData+[("Dummy", None)]:
-                if t != oldTag:
-                    if a is not None:
-                        b=lineNumber
-                        self.navigationList.append((a,b,oldTag))
-                    if t is None:
-                        a=None
-                    else:
-                        a=lineNumber
-                oldTag=t
-                lineNumber=lineNumber+1
-
-            self.totalLines=lineNumber-2
-
-            self.linesLabel.config(text="Total lines: %d" % self.totalLines)
-
-            self.leftText.tag_config("red", background="pink")
-            self.leftText.tag_config("green", background="lightgreen")
-            self.leftText.tag_config("blue", background="lightblue")
-            self.leftText.tag_config("highlight", background="black", foreground="white")
-            # diffchar tag must be created after highlight tag in order to have priority
-            # (still be visible when highlighted)
-            self.leftText.tag_config("bluediffchar",
-                    background="red",
-                    foreground="white",
-                    relief=tk.GROOVE)
-            self.leftText.tag_raise(tk.SEL)  # SEL overrides all other tags
-            self.leftText.tag_config(tk.SEL, background="black", foreground="white")
-
-            self.rightText.tag_config("red", background="pink")
-            self.rightText.tag_config("green", background="lightgreen")
-            self.rightText.tag_config("blue", background="lightblue")
-            self.rightText.tag_config("highlight", background="black", foreground="white")
-            # diffchar tag must be created after highlight tag in order to have priority
-            self.rightText.tag_config("bluediffchar",
-                    background="red",
-                    foreground="white",
-                    relief=tk.GROOVE)
-            self.rightText.tag_raise(tk.SEL)  # SEL overrides all other tags
-            self.rightText.tag_config(tk.SEL, background="black", foreground="white")
-
-            assert(len(self.leftData)==self.totalLines)
-            assert(len(self.rightData)==self.totalLines)
-
-            lineNumber=0
-            while lineNumber<self.totalLines:
-                leftLine,leftTag=self.leftData[lineNumber]
-                rightLine,rightTag=self.rightData[lineNumber]
-                assert(leftTag==rightTag)
-                if (leftTag == "blue" and
-                    leftLine != "" and leftLine != "\n" and
-                    rightLine != "" and rightLine != "\n"):
-                    xdleft,ydleft,xdright,ydright = self.onelinediff(leftLine,rightLine)
-                    # xdleft points now to the first different character of the line
-                    # ydleft points to first different character from the end
-
-                    self.leftText.insert(tk.END, leftLine[:xdleft], "blue")
-                    self.leftText.insert(tk.END, leftLine[xdleft:len(leftLine)-ydleft], "bluediffchar")
-                    self.leftText.insert(tk.END, leftLine[len(leftLine)-ydleft:], "blue")
-                    self.rightText.insert(tk.END, rightLine[:xdright], "blue")
-                    self.rightText.insert(tk.END, rightLine[xdright:len(rightLine)-ydright], "bluediffchar")
-                    self.rightText.insert(tk.END, rightLine[len(rightLine)-ydright:], "blue")
+        lineNumber=1
+        oldTag=None
+        a=None
+        b=None
+        for x,t in self.leftData+[("Dummy", None)]:
+            if t != oldTag:
+                if a is not None:
+                    b=lineNumber
+                    self.navigationList.append((a,b,oldTag))
+                if t is None:
+                    a=None
                 else:
-                    self.leftText.insert(tk.END, leftLine, leftTag)
-                    self.rightText.insert(tk.END, rightLine, rightTag)
-                lineNumber=lineNumber+1
+                    a=lineNumber
+            oldTag=t
+            lineNumber=lineNumber+1
 
-            self.navigateToIndex()
-        except IOError as exception:
-            exstr = str(exception)
-            sys.stderr.write(exstr+"\n")
-            MessageDialog(self, "xdiff IO Error", exstr)
-            sys.exit(1)
+        self.totalLines=lineNumber-2
+
+        self.linesLabel.config(text="Total lines: %d" % self.totalLines)
+
+        self.leftText.tag_config("red", background="pink")
+        self.leftText.tag_config("green", background="lightgreen")
+        self.leftText.tag_config("blue", background="lightblue")
+        self.leftText.tag_config("highlight", background="black", foreground="white")
+        # diffchar tag must be created after highlight tag in order to have priority
+        # (still be visible when highlighted)
+        self.leftText.tag_config("bluediffchar",
+                background="red",
+                foreground="white",
+                relief=tk.GROOVE)
+        self.leftText.tag_raise(tk.SEL)  # SEL overrides all other tags
+        self.leftText.tag_config(tk.SEL, background="black", foreground="white")
+
+        self.rightText.tag_config("red", background="pink")
+        self.rightText.tag_config("green", background="lightgreen")
+        self.rightText.tag_config("blue", background="lightblue")
+        self.rightText.tag_config("highlight", background="black", foreground="white")
+        # diffchar tag must be created after highlight tag in order to have priority
+        self.rightText.tag_config("bluediffchar",
+                background="red",
+                foreground="white",
+                relief=tk.GROOVE)
+        self.rightText.tag_raise(tk.SEL)  # SEL overrides all other tags
+        self.rightText.tag_config(tk.SEL, background="black", foreground="white")
+
+        assert(len(self.leftData)==self.totalLines)
+        assert(len(self.rightData)==self.totalLines)
+
+        lineNumber=0
+        while lineNumber<self.totalLines:
+            leftLine,leftTag=self.leftData[lineNumber]
+            rightLine,rightTag=self.rightData[lineNumber]
+            assert(leftTag==rightTag)
+            if (leftTag == "blue" and
+                leftLine != "" and leftLine != "\n" and
+                rightLine != "" and rightLine != "\n"):
+                xdleft, ydleft, xdright, ydright = self.oneLineDiff(leftLine, rightLine)
+                # xdleft points now to the first different character of the line
+                # ydleft points to first different character from the end
+
+                self.leftText.insert(tk.END, leftLine[:xdleft], "blue")
+                self.leftText.insert(tk.END, leftLine[xdleft:len(leftLine)-ydleft], "bluediffchar")
+                self.leftText.insert(tk.END, leftLine[len(leftLine)-ydleft:], "blue")
+                self.rightText.insert(tk.END, rightLine[:xdright], "blue")
+                self.rightText.insert(tk.END, rightLine[xdright:len(rightLine)-ydright], "bluediffchar")
+                self.rightText.insert(tk.END, rightLine[len(rightLine)-ydright:], "blue")
+            else:
+                self.leftText.insert(tk.END, leftLine, leftTag)
+                self.rightText.insert(tk.END, rightLine, rightTag)
+            lineNumber=lineNumber+1
+
+        self.navigateToIndex()
+
+    def normalize(self, str):
+        if self.ignoreAllBlanks:
+            return ' '.join(str.split())
+        if self.ignoreTrailingBlanks:
+            return str.rstrip()
+        return str
 
     def calculateDiffRecords(self):
-
         self.diffRecords = []
-
-        with open(self.filename1, "r") as stream:
-            left = stream.readlines()
-
-        with open(self.filename2, "r") as stream:
-            right = stream.readlines()
-
-        # optional blank ignoring like -B
-        if self.ignoreBlankFlagString:
-            def norm(x): return "" if x.strip()=="" else x
-            left  = [norm(x) for x in left]
-            right = [norm(x) for x in right]
-
+        left = [self.normalize(line) for line in self.leftLines]
+        right = [self.normalize(line) for line in self.rightLines]
         matcher = difflib.SequenceMatcher(None, left, right)
-
         for tag, i1, i2, j1, j2 in matcher.get_opcodes():
             if tag == "replace":
                 self.diffRecords.append(("c", i1+1, i2, j1+1, j2))
@@ -934,22 +911,24 @@ class DiffViewer(tk.Frame):
             elif tag == "insert":
                 self.diffRecords.append(("a", i1, i1, j1+1, j2))
 
-        #print("diffRecords:", self.diffRecords)
-
     def prepareLineForDiff(self, line):
         lineData = []
         for i in range(len(line)):
             ch = line[i]
-            if self.ignoreBlankFlagString == "-w":
+            if self.ignoreAllBlanks:
                 if ch not in [ " ", "\t", "\r", "\n" ]:
-                    lineData.append((ch, i))
+                    lineData.append((ch,i))
             else:
-                lineData.append((ch, i))
+                lineData.append((ch,i))
+        #print lineData
         return lineData
 
-    def onelinediff(self, leftLine, rightLine):
+
+    def oneLineDiff(self, leftLine, rightLine):
         if leftLine == rightLine:
             return(0, 0, 0, 0)
+        leftChunks = re.findall(r'\s+|\S+', leftLine)
+        rightChunks = re.findall(r'\s+|\S+', rightLine)
 
         leftLineData = self.prepareLineForDiff(leftLine)
         rightLineData = self.prepareLineForDiff(rightLine)
@@ -961,21 +940,21 @@ class DiffViewer(tk.Frame):
             if leftLineData[x][0] != rightLineData[x][0]:
                 break
             x += 1
-        # x points now to the first different character of the line.
+        # x points to the first different character of the line.
 
         y = 0
         while y1 - y > x and y2 - y > x:
             if leftLineData[y1-y][0] != rightLineData[y2-y][0]:
                 break
             y += 1
-        # y points to first different character from the end of the line.
+        # y points to last different character of the line.
 
         xdleft = leftLineData[x][1]
         xdright = rightLineData[x][1]
         ydleft = len(leftLine)-leftLineData[y1-y][1]-1
         ydright = len(rightLine)-rightLineData[y2-y][1]-1
 
-        result = (xdleft,ydleft,xdright,ydright)
+        result = (xdleft, ydleft, xdright, ydright)
         return result
 
 
@@ -983,7 +962,8 @@ class DiffTool:
     def __init__(self):
         self.filename1 = None
         self.filename2 = None
-        self.ignoreBlankFlagString = ""
+        self.ignoreAllBlanks = False 
+        self.ignoreTrailingBlanks = False 
 
     def usage(self, *arguments):
         warn(*arguments)
@@ -1010,9 +990,9 @@ class DiffTool:
 
         for key, value in options:
             if key == '-w':
-                self.ignoreBlankFlagString = "-w"
+                self.ignoreAllBlanks = True 
             elif key == '-b':
-                self.ignoreBlankFlagString = "-b"
+                self.ignoreTrailingBlanks = True 
             else:
                 error('unexpected command line option', key)
         if len(arguments) < 2:
@@ -1102,10 +1082,12 @@ class DiffTool:
 
         self.viewer = DiffViewer(root)
         self.viewer.quietMode = True
-        self.viewer.ignoreBlankFlagString = self.ignoreBlankFlagString
+        self.viewer.ignoreTrailingBlanks = self.ignoreTrailingBlanks
+        self.viewer.ignoreAllBlanks = self.ignoreAllBlanks
         self.viewer.viewFiles(leftFilename, rightFilename)
 
         self.myMainLoop(root)
+
     def myMainLoop(self, root):
         # Simulate mainloop with instant response for Ctrl-C
         # Replaces root.mainloop() which is slow to react on Ctrl-C

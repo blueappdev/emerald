@@ -97,6 +97,19 @@ class Interface:
                 POINTER(GciErrSType)   # GciErrSType *err
             ]
 
+        self.gciTsPerformFetchBytes = self.library.GciTsPerformFetchBytes
+        self.gciTsPerformFetchBytes.restype = c_ssize_t
+        self.gciTsPerformFetchBytes.argtypes = [
+                GciSession,            # GciSession sess
+                OopType,               # OopType receiver
+                c_char_p,              # const *char selectorStr
+                POINTER(OopType),      # OopType *args
+                c_int,                 # int numArgs
+                c_char_p,              # Byte_Type *result
+                c_ssize_t,             # ssize_t maxResultSize
+                POINTER(GciErrSType)   # GciErrSType *err
+            ]
+
         self.gciTsLogin = self.library.GciTsLogin
         self.gciTsLogin.restype = GciSession
         self.gciTsLogin.argtypes = [
@@ -242,6 +255,32 @@ class Session:
         if numberOfBytes >= bufferSize:
             raise 'results exceeds buffer size'
         self.print("executeFetchBytes SUCCESS", numberOfBytes)
+        result = buffer.value.decode('utf-8', errors='strict')
+        self.print("len", len(result), result.__class__)
+        return result
+
+    def performFetchBytes(self, receiver : OopType, selectorStr : str, arguments) -> str:
+        self.print(f"performFetchBytes({selectorStr})")
+        bufferSize = 1000000
+        buffer = create_string_buffer(bufferSize)
+        error = GciErrSType()
+        argument
+        numberOfBytes = self._interface.gciTsPerformFetchBytes(
+                self._session_id,       # GciSession sess
+                receiver,               # OopType receiver
+                selectorStr.encode('utf-8'),   # const char* selectorStr
+                0,                      # OopType *args
+                ilen(arguments),        # int numArgs
+                buffer,                 # Byte_Type *result
+                bufferSize,             # ssize_t maxResultSize
+                byref(error))           # GciErrSType *err
+        self.print("performFetchBytes numberOfBytes", numberOfBytes)
+        if numberOfBytes == -1:
+            print("performFetchBytes FAILED")
+            raise GciException(error)
+        if numberOfBytes >= bufferSize:
+            raise 'results exceeds buffer size'
+        self.print("performFetchBytes SUCCESS", numberOfBytes)
         result = buffer.value.decode('utf-8', errors='strict')
         self.print("len", len(result), result.__class__)
         return result
