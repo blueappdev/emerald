@@ -78,6 +78,6 @@ class AllBlankTests(unittest.TestCase):
         self.check('Better\n', 'Butter\n', (1, 5, 1, 5))
 
 if __name__ == '__main__':
-    unittest.main(buffer=True, verbosity=2)
+    unittest.main(buffer=True, verbosity=0)
 
 
