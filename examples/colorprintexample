@@ -1,0 +1,29 @@
+#!/usr/bin/python3
+
+print("\033[31mred text\033[0m")
+print("\033[32mgreen text\033[0m")
+print("\033[33myellow text\033[0m")
+
+print("\033[1;31mred text\033[0m")
+print("\033[2;32mgreen text\033[0m")
+print("\033[3;33myellow text\033[0m")
+
+
+print("0\033[0;31mred text\033[0m")
+print("1\033[1;31mred text\033[0m")
+print("\033[2;31mred text\033[0m")
+print("\033[3;31mred text\033[0m")
+print("\033[4;31mred text\033[0m")
+print("5\033[5;31mred text\033[0m")
+print("\033[6;31mred text\033[0m")
+print("\033[7;31mred text\033[0m")
+print("\033[8;31mred text\033[0m")
+print("\033[9;31mred text\033[0m")
+print("\033[10;31mred text\033[0m")
+print("\033[11;31mred text\033[0m")
+print("12\033[12;31mred text\033[0m")
+print("\033[13;31mred text\033[0m")
+print("\033[14;31mred text\033[0m")
+print("15\033[15;31mred text\033[0m")
+print("58\033[58;31mred text\033[0m")
+
