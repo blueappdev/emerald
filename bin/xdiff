@@ -613,7 +613,7 @@ class DiffViewer(tk.Frame):
             self.findInWhatWindow = dialog.findInWhatWindow.get()
             self.findIgnoreCase = dialog.findIgnoreCase.get()
             if self.findInWhatWindow=="right":
-                self.findData=rightData
+                self.findData=self.rightData
                 self.findTextWidget = self.rightText
             else:
                 self.findData=self.leftData
@@ -939,6 +939,16 @@ class DiffViewer(tk.Frame):
 
     def splitChunks(self, str):
         return re.findall(r'\s+|\S+', str)
+    
+    def linesAreEqual(self, leftLine, rightLine):
+        if self.ignoreAllBlanks:
+            return leftLine.split() == rightLine.split()
+        elif self.ignoreTrailingBlanks:
+            leftContent, leftBlanks = self.splitTrailingBlanks(leftLine)
+            rightContent, rightBlanks = self.splitTrailingBlanks(rightLine)
+            return leftContent == rightContent
+        else:
+            return leftLine == rightLine
 
     def indexesOfFirstDifferentCharacter(self, leftLine, rightLine):
         assert self.ignoreAllBlanks
@@ -955,6 +965,8 @@ class DiffViewer(tk.Frame):
             firstDifferentRight += len(rightChunks[rightIndex])
             rightIndex = rightIndex+1
         while True:
+            if leftIndex >= len(leftChunks)-1 or rightIndex > len(rightChunks)-1:
+                break
             leftChunk = leftChunks[leftIndex]
             rightChunk = rightChunks[rightIndex]
             if leftChunk.isspace():
@@ -974,27 +986,31 @@ class DiffViewer(tk.Frame):
         return firstDifferentLeft, firstDifferentRight
 
     def indexesOfLastDifferentCharacter(self, leftLine, rightLine):
-        return self.indexesOfFirstDifferentCharacter(leftLine[::-1], rightLine[::-1])
+        return self.indexesOfFirstDifferentCharacter(leftLine[::-1]+'\n', rightLine[::-1]+'\n')
 
     def oneLineDiff(self, leftLine, rightLine):
         if self.ignoreAllBlanks:
+            if self.linesAreEqual(leftLine, rightLine):
+                return 0, 0, 0, 0
             firstDifferentLeft, firstDifferentRight = self.indexesOfFirstDifferentCharacter(leftLine, rightLine)
             lastDifferentLeft, lastDifferentRight = self.indexesOfLastDifferentCharacter(leftLine, rightLine)
             return firstDifferentLeft, lastDifferentLeft, firstDifferentRight, lastDifferentRight
         elif self.ignoreTrailingBlanks:
+            if self.linesAreEqual(leftLine, rightLine):
+                return 0, 0, 0, 0
             leftContent, leftBlanks = self.splitTrailingBlanks(leftLine)
             rightContent, rightBlanks = self.splitTrailingBlanks(rightLine)
             if leftContent == rightContent:
-                return (0,0,0,0)
+                return 0, 0 ,0 ,0
             first = self.first_diff(leftContent, rightContent)
             last = self.last_diff(leftContent, rightContent)
-            return (first, last+len(leftBlanks), first, last+len(rightBlanks))
+            return first, last+len(leftBlanks), first, last+len(rightBlanks)
         else:
-            if leftLine == rightLine:
-                return (0,0,0,0)
+            if self.linesAreEqual(leftLine, rightLine):
+                return 0, 0, 0, 0
             first = self.first_diff(leftLine, rightLine)
             last = self.last_diff(leftLine, rightLine)
-            return (first, last, first, last)
+            return first, last, first, last
 
 class DiffTool:
     def __init__(self):
