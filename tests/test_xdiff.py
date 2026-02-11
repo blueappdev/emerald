@@ -30,6 +30,10 @@ class DiffTests(unittest.TestCase):
     def testButter(self):
         self.check('Better\n', 'Butter\n', (1, 5, 1, 5))
 
+    def testSpace(self):
+        self.check('aa  bb\n', 'aa  bb\n', (0, 0, 0, 0))
+        self.check('aa  bb\n', 'aa   bb\n', (4, 5, 4, 5))
+
 class TrailingBlankTests(unittest.TestCase):
     def check(self, left, right, expected):
         viewer = xdiff.DiffViewer(None)
@@ -49,6 +53,10 @@ class TrailingBlankTests(unittest.TestCase):
 
     def testButter(self):
         self.check('Better\n', 'Butter\n', (1, 5, 1, 5))
+
+    def testSpace(self):
+        self.check('aa  bb\n', 'aa  bb\n', (0, 0, 0, 0))
+        self.check('aa  bb\n', 'aa   bb\n', (4, 5, 4, 5))
 
 class AllBlankTests(unittest.TestCase):
 
@@ -76,6 +84,10 @@ class AllBlankTests(unittest.TestCase):
 
     def testButter(self):
         self.check('Better\n', 'Butter\n', (1, 5, 1, 5))
+
+    def testSpace(self):
+        self.check('aa  bb\n', 'aa  bb\n', (0, 0, 0, 0))
+        self.check('aa  bb\n', 'aa   bb\n', (0, 0, 0, 0))
 
 if __name__ == '__main__':
     unittest.main(buffer=True, verbosity=0)

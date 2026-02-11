@@ -5,7 +5,6 @@
 
 import os.path
 from ctypes import *
-#from platform import * 
 
 GciSession = c_void_p
 OopType = c_uint64
@@ -269,7 +268,7 @@ class Session:
                 receiver,               # OopType receiver
                 selectorStr.encode('utf-8'),   # const char* selectorStr
                 (OopType * len(arguments))(*arguments), # OopType *args
-                len(arguments),        # int numArgs
+                len(arguments),         # int numArgs
                 buffer,                 # Byte_Type *result
                 bufferSize,             # ssize_t maxResultSize
                 byref(error))           # GciErrSType *err
