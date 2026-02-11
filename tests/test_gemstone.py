@@ -104,6 +104,14 @@ class GemStoneTests(unittest.TestCase):
         world = self.session.newString('World')
         result = self.session.performFetchBytes(hello, ',', [world])
         self.assertEqual(result, 'HelloWorld')
+
+    def testPerform1(self):
+        result = self.session.perform(gemstone.OOP_One, gemstone.OOP_ILLEGAL, 'yourself', [])
+        self.assertEqual(result, gemstone.OOP_One)
+
+    def testPerform2(self):
+        result = self.session.perform(gemstone.OOP_One, gemstone.OOP_ILLEGAL, '+', [gemstone.OOP_Two])
+        self.assertEqual(result, gemstone.OOP_Three)
   
 if __name__ == '__main__':
     unittest.main(verbosity=0)

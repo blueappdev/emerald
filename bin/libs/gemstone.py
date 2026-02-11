@@ -14,11 +14,19 @@ GCI_ERR_STR_SIZE = 1024
 GCI_ERR_reasonSize = GCI_ERR_STR_SIZE
 GCI_MAX_ERR_ARGS = 10
 
+GCI_PERFORM_FLAG_ENABLE_DEBUG = 1
+GCI_PERFORM_FLAG_DISABLE_ASYNC_EVENTS = 2
+GCI_PERFORM_FLAG_SINGLE_STEP = 4
+GCI_PERFORM_noClientUseraction = 0x10
+GCI_PERFORM_FLAG_INTERPRETED = 0x20
+
 OOP_ILLEGAL = 1
 OOP_NIL = 20
 OOP_One = 10
 OOP_Two = 18
 OOP_Three = 26
+
+OOP_CLASS_STRING = 74753
 
 GCI_LOGIN_QUIET = 0x10
 
@@ -93,6 +101,20 @@ class Interface:
                 OopType,               # OopType symbolList
                 c_char_p,              # Byte_Type *result
                 c_ssize_t,             # ssize_t maxResultSize
+                POINTER(GciErrSType)   # GciErrSType *err
+            ]
+
+        self.gciTsPerform = self.library.GciTsPerform
+        self.gciTsPerform.restype = OopType
+        self.gciTsPerform.argtypes = [
+                GciSession,            # GciSession sess
+                OopType,               # OopType receiver
+                OopType,               # OopType aSymbol
+                c_char_p,              # const *char selectorStr
+                POINTER(OopType),      # OopType *args
+                c_int,                 # int numArgs
+                c_int,                 # int flags (per GCI_PERFORM_FLAG* in gcicmn.ht)
+                c_ushort,              # ushort environmentId (normally zero)
                 POINTER(GciErrSType)   # GciErrSType *err
             ]
 
@@ -197,7 +219,7 @@ class Session:
         result = self.gciTsExecute(
                 session,
                 aString.encode('ascii'),
-                74753, # 74753 is the oop of String
+                OOP_CLASS_STRING,
                 OOP_ILLEGAL,
                 OOP_NIL,
                 0, 0, byref(error))
@@ -256,6 +278,22 @@ class Session:
         self.print("executeFetchBytes SUCCESS", numberOfBytes)
         result = buffer.value.decode('utf-8', errors='strict')
         self.print("len", len(result), result.__class__)
+        return result
+
+    def perform(self, receiver : OopType, aSymbol : OopType, selectorStr, arguments) -> OopType:
+        error = GciErrSType()
+        result = self._interface.gciTsPerform(
+                self._session_id,       # GciSession sess
+                receiver,               # OopType receiver
+                aSymbol,                # OopType aSymbol
+                selectorStr.encode('utf-8'),   # const char* selectorStr
+                (OopType * len(arguments))(*arguments), # OopType *args
+                len(arguments),         # int numArgs
+                0,                      # int flags (per GCI_PERFORM_FLAG* in gcicmn.ht)
+                0,                      # ushort environmentId (normally zero)
+                byref(error))           # GciErrSType *err)
+        if result == OOP_ILLEGAL:
+            raise GciException(error)
         return result
 
     def performFetchBytes(self, receiver : OopType, selectorStr : str, arguments) -> str:
