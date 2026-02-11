@@ -112,6 +112,16 @@ class GemStoneTests(unittest.TestCase):
     def testPerform2(self):
         result = self.session.perform(gemstone.OOP_One, gemstone.OOP_ILLEGAL, '+', [gemstone.OOP_Two])
         self.assertEqual(result, gemstone.OOP_Three)
+
+    def testNewSymbol(self):
+        oop = self.session.newSymbol('printString')
+        self.assertEqual(oop, 3362049)
+
+    def testNewString(self):
+        string = self.session.newString('printString')
+        symbol = self.session.newSymbol('printString')
+        self.assertNotEqual(string, symbol)
+
   
 if __name__ == '__main__':
-    unittest.main(verbosity=0)
+    unittest.main(verbosity=1)

@@ -8,7 +8,7 @@ from ctypes import *
 
 GciSession = c_void_p
 OopType = c_uint64
-ByteType = c_char
+ByteType = c_ubyte
 
 GCI_ERR_STR_SIZE = 1024
 GCI_ERR_reasonSize = GCI_ERR_STR_SIZE
@@ -35,10 +35,6 @@ class Interface:
         path = os.path.expandvars('$GEMSTONE/lib/libgcits-3.6.2-64.so')
         self.library = CDLL(path)
 
-        self.gciTsVersion = self.library.GciTsVersion
-        self.gciTsVersion.restype = c_int
-        self.gciTsVersion.argtypes = [c_char_p, c_size_t]
-
         self.gciI32ToOop = self.library.GciI32ToOop
         self.gciI32ToOop.restype = c_int32
         self.gciI32ToOop.argtypes = [OopType]
@@ -51,13 +47,13 @@ class Interface:
         self.gciTsBegin.restype = c_bool
         self.gciTsBegin.argtypes = [GciSession, POINTER(GciErrSType)]
 
-        self.gciTsCommit = self.library.GciTsCommit
-        self.gciTsCommit.restype = c_bool
-        self.gciTsCommit.argtypes = [GciSession, POINTER(GciErrSType)]
-
         self.gciTsCharToOop = self.library.GciTsCharToOop
         self.gciTsCharToOop.restype = OopType
         self.gciTsCharToOop.argtypes = [c_uint]
+
+        self.gciTsCommit = self.library.GciTsCommit
+        self.gciTsCommit.restype = c_bool
+        self.gciTsCommit.argtypes = [GciSession, POINTER(GciErrSType)]
 
         self.gciTsDoubleToSmallDouble = self.library.GciTsDoubleToSmallDouble
         self.gciTsDoubleToSmallDouble.restype = OopType
@@ -104,6 +100,42 @@ class Interface:
                 POINTER(GciErrSType)   # GciErrSType *err
             ]
 
+        self.gciTsLogin = self.library.GciTsLogin
+        self.gciTsLogin.restype = GciSession
+        self.gciTsLogin.argtypes = [
+                c_char_p,              # const char *StoneNameNrs
+                c_char_p,              # const char *HostUserId
+                c_char_p,              # const char *HostPassword
+                c_bool,                # BoolType hostPwIsEncrypted
+                c_char_p,              # const char *GemServiceNrs
+                c_char_p,              # const char *gemstoneUsername
+                c_char_p,              # const char *gemstonePassword
+                c_uint,                # unsigned int loginFlags (per GCI_LOGIN* in gci.ht)
+                c_int,                 # int haltOnErrNum
+                POINTER(c_bool),       # BoolType *executedSessionInit
+                POINTER(GciErrSType)   # GciErrSType *err
+            ]
+
+        self.gciTsLogout = self.library.GciTsLogout
+        self.gciTsLogout.restype = c_bool
+        self.gciTsLogout.argtypes = [GciSession, POINTER(GciErrSType)]
+
+        self.gciTsNewString = self.library.GciTsNewString
+        self.gciTsNewString.restype = OopType
+        self.gciTsNewString.argtypes = [GciSession, c_char_p, POINTER(GciErrSType)]
+
+        self.gciTsNewSymbol = self.library.GciTsNewSymbol
+        self.gciTsNewSymbol.restype = OopType
+        self.gciTsNewSymbol.argtypes = [GciSession, c_char_p, POINTER(GciErrSType)]
+
+        self.gciTsOopIsSpecial = self.library.GciTsOopIsSpecial
+        self.gciTsOopIsSpecial.restype = c_bool
+        self.gciTsOopIsSpecial.argtypes = [OopType]
+
+        self.gciTsOopToChar = self.library.GciTsOopToChar
+        self.gciTsOopToChar.restype = c_int
+        self.gciTsOopToChar.argtypes = [OopType]
+
         self.gciTsPerform = self.library.GciTsPerform
         self.gciTsPerform.restype = OopType
         self.gciTsPerform.argtypes = [
@@ -131,38 +163,6 @@ class Interface:
                 POINTER(GciErrSType)   # GciErrSType *err
             ]
 
-        self.gciTsLogin = self.library.GciTsLogin
-        self.gciTsLogin.restype = GciSession
-        self.gciTsLogin.argtypes = [
-                c_char_p,              # const char *StoneNameNrs
-                c_char_p,              # const char *HostUserId
-                c_char_p,              # const char *HostPassword
-                c_bool,                # BoolType hostPwIsEncrypted
-                c_char_p,              # const char *GemServiceNrs
-                c_char_p,              # const char *gemstoneUsername
-                c_char_p,              # const char *gemstonePassword
-                c_uint,                # unsigned int loginFlags (per GCI_LOGIN* in gci.ht)
-                c_int,                 # int haltOnErrNum
-                POINTER(c_bool),       # BoolType *executedSessionInit
-                POINTER(GciErrSType)   # GciErrSType *err
-            ]
-
-        self.gciTsLogout = self.library.GciTsLogout
-        self.gciTsLogout.restype = c_bool
-        self.gciTsLogout.argtypes = [GciSession, POINTER(GciErrSType)]
-
-        self.gciTsOopIsSpecial = self.library.GciTsOopIsSpecial
-        self.gciTsOopIsSpecial.restype = c_bool
-        self.gciTsOopIsSpecial.argtypes = [OopType]
-
-        self.gciTsNewString = self.library.GciTsNewString
-        self.gciTsNewString.restype = OopType
-        self.gciTsNewString.argtypes = [GciSession, c_char_p, POINTER(GciErrSType)]
-
-        self.gciTsOopToChar = self.library.GciTsOopToChar
-        self.gciTsOopToChar.restype = c_int
-        self.gciTsOopToChar.argtypes = [OopType]
-
         self.gciTsResolveSymbol = self.library.GciTsResolveSymbol
         self.gciTsResolveSymbol.restype = OopType
         self.gciTsResolveSymbol.argtypes = [GciSession, c_char_p, OopType, POINTER(GciErrSType)]
@@ -178,6 +178,7 @@ class Interface:
         self.gciTsVersion = self.library.GciTsVersion
         self.gciTsVersion.restype = c_int
         self.gciTsVersion.argtypes = [c_char_p, c_size_t]
+
 
 class Session:
     def __init__(self, verbose=False):
@@ -384,6 +385,16 @@ class Session:
     def newString(self, str) -> OopType:
         error = GciErrSType()
         result = self._interface.gciTsNewString(
+                self._session_id, 
+                str.encode('utf-8'), 
+                byref(error))
+        if result == OOP_ILLEGAL:
+            raise GciException(error)
+        return result
+
+    def newSymbol(self, str) -> OopType:
+        error = GciErrSType()
+        result = self._interface.gciTsNewSymbol(
                 self._session_id, 
                 str.encode('utf-8'), 
                 byref(error))

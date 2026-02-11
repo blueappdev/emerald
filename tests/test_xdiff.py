@@ -90,6 +90,6 @@ class AllBlankTests(unittest.TestCase):
         self.check('aa  bb\n', 'aa   bb\n', (0, 0, 0, 0))
 
 if __name__ == '__main__':
-    unittest.main(buffer=True, verbosity=0)
+    unittest.main(buffer=True, verbosity=1)
 
 
