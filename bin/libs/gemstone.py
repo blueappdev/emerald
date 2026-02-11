@@ -264,25 +264,20 @@ class Session:
         bufferSize = 1000000
         buffer = create_string_buffer(bufferSize)
         error = GciErrSType()
-        argument
         numberOfBytes = self._interface.gciTsPerformFetchBytes(
                 self._session_id,       # GciSession sess
                 receiver,               # OopType receiver
                 selectorStr.encode('utf-8'),   # const char* selectorStr
-                0,                      # OopType *args
-                ilen(arguments),        # int numArgs
+                (OopType * len(arguments))(*arguments), # OopType *args
+                len(arguments),        # int numArgs
                 buffer,                 # Byte_Type *result
                 bufferSize,             # ssize_t maxResultSize
                 byref(error))           # GciErrSType *err
-        self.print("performFetchBytes numberOfBytes", numberOfBytes)
         if numberOfBytes == -1:
-            print("performFetchBytes FAILED")
             raise GciException(error)
         if numberOfBytes >= bufferSize:
             raise 'results exceeds buffer size'
-        self.print("performFetchBytes SUCCESS", numberOfBytes)
         result = buffer.value.decode('utf-8', errors='strict')
-        self.print("len", len(result), result.__class__)
         return result
 
     def I32ToOop(self, arg) -> c_int32:

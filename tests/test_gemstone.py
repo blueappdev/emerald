@@ -94,8 +94,16 @@ class GemStoneTests(unittest.TestCase):
         self.assertEqual(result, 'Hello World')
 
     def testPerformFetchBytes(self):
-        result = self.session.performFetchBytes(26, 'printString', [])
-        self.assertEqual(result, '555')
+        result = self.session.performFetchBytes(gemstone.OOP_Three, 'printString', [])
+        self.assertEqual(result, '3')
+        result = self.session.performFetchBytes(gemstone.OOP_NIL, 'printString', [])
+        self.assertEqual(result, 'nil')
+
+    def testStringConcatenation(self):
+        hello = self.session.newString('Hello')
+        world = self.session.newString('World')
+        result = self.session.performFetchBytes(hello, ',', [world])
+        self.assertEqual(result, 'HelloWorld')
   
 if __name__ == '__main__':
     unittest.main(verbosity=0)
