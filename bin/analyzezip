@@ -1,0 +1,97 @@
+#!/usr/bin/python3
+#
+# analyzezip
+#
+
+import struct, sys
+import zlib
+
+LFH_SIG = 0x04034B50
+CD_SIG  = 0x02014B50
+EOCD_SIG= 0x06054B50
+
+
+def read_eocd(f):
+    f.seek(0,2)
+    size = f.tell()
+    max_back = min(size, 0xFFFF + 22)
+
+    f.seek(size - max_back)
+    data = f.read()
+
+    for i in range(len(data)-4, -1, -1):
+        if data[i:i+4] == b'PK\x05\x06':
+            eocd = data[i:i+22]
+            fields = struct.unpack("<IHHHHIIH", eocd)
+            cd_offset = fields[6]
+            cd_size   = fields[5]
+            return cd_offset, cd_size
+    raise ValueError("EOCD not found")
+
+
+def read_central_directory(f, offset, size):
+    f.seek(offset)
+    end = offset + size
+    entries = []
+
+    while f.tell() < end:
+        sig = struct.unpack("<I", f.read(4))[0]
+        if sig != CD_SIG:
+            raise ValueError("bad central directory signature")
+
+        hdr = f.read(42)
+        (ver_made, ver_need, flag, comp, modt, modd, crc,
+         csize, usize, nlen, elen, clen, disk, iattr, eattr,
+         lfh_off) = struct.unpack("<HHHHHHIIIHHHHHII", hdr)
+
+        name = f.read(nlen)
+        extra = f.read(elen)
+        comment = f.read(clen)
+
+        entries.append((name.decode(errors="replace"), comp, lfh_off, csize, usize))
+
+    return entries
+
+
+def read_file(f, entry):
+    name, comp, offset, csize, usize = entry
+    f.seek(offset)
+
+    sig = struct.unpack("<I", f.read(4))[0]
+    if sig != LFH_SIG:
+        raise ValueError("bad local header")
+
+    hdr = f.read(26)
+    (ver, flag, comp2, modt, modd, crc,
+     csize2, usize2, nlen, elen) = struct.unpack("<HHHHHIIIHH", hdr)
+
+    fname = f.read(nlen)
+    extra = f.read(elen)
+
+    data = f.read(csize)
+
+    if comp == 0:          # stored
+        return data
+    elif comp == 8:        # deflate
+        return zlib.decompress(data, -15)
+    else:
+        raise NotImplementedError(comp)
+
+
+def read_zip(path):
+    with open(path, "rb") as f:
+        cd_off, cd_size = read_eocd(f)
+        entries = read_central_directory(f, cd_off, cd_size)
+
+        files = {}
+        for e in entries:
+            files[e[0]] = read_file(f, e)
+        return files
+
+
+if __name__ == "__main__":
+    for file in sys.argv[1:]:
+        files = read_zip(file)
+        for k,v in files.items():
+            print(k, len(v))
+

@@ -1,0 +1,107 @@
+#!/usr/bin/python3
+#
+# xml2smalltalk
+#
+
+import sys, xml.sax
+import libs.commandlib 
+
+class Element:
+    def __init__(self, name, attributes):
+        self.name = name
+        self.attributes = attributes
+        self.children = []
+        self.parent = None
+        self.text = None
+
+    def addChild(self, child):
+        self.children.append(child)
+        child.parent = self
+
+    def __repr__(self):
+        return '['+self.name+']'
+
+class XMLHandler(xml.sax.ContentHandler):
+    def __init__(self):
+        self.current = None
+
+    def startElement(self, name, attributes):
+        newElement = Element(name, attributes)
+        if self.current is not None:
+            self.current.addChild(newElement)
+        self.current = newElement
+
+    def endElement(self, tag):
+        if self.current.parent is not None:
+            self.current = self.current.parent
+
+    def characters(self, content):
+        if content.strip() != '':
+            self.current.text = content
+
+class XMLTool(libs.commandlib.CommandLineTool):
+    def __init__(self,):
+        super().__init__()
+        self.applicationName = 'xml2smalltalk'
+
+    def help(self, *args):
+        self.warn(*args)
+        self.warn('xml2smalltalk - converts xml to Smalltalk code')
+        self.warn('xml2smalltalk [FILE, ...]')
+        self.warn('Reads input files and writes Smalltalk code to stdout.')
+        sys.exit(2)
+
+    def processArguments(self, files):
+        if len(files) == 0:
+            self.error('no input files')
+        else:
+            for file in files:
+                self.processFile(file)
+
+    def processFile(self, file):
+        handler = XMLHandler()
+        parser = xml.sax.make_parser()
+        parser.setFeature(xml.sax.handler.feature_namespaces, False)
+        parser.setContentHandler(handler)
+        parser.parse(file)
+        self.emit('writeContents\n\n\t')
+        self.traverse(handler.current, index=0, indent=2)
+
+    def traverse(self, element, index, indent):
+        if index == 0:
+            self.emit("self\n")
+        else:
+            self.emit(";\n")
+        self.emit("writeElement: '"+element.name, "'", indent=indent+1)
+        self.emitAttributes(element.attributes.items(), indent)
+        if len(element.children) == 0:
+            if element.text is not None:
+                self.emit('\n')
+                self.emit("value: '", element.text, "'", indent=indent+2)
+        else:
+            self.emit('\n')
+            self.emit("block:\n", indent=indent+2)
+            self.emit("[", indent=indent+3)
+            for i, each in enumerate(element.children):
+                self.traverse(element=each, index=i, indent=indent+3)
+            self.emit(']')
+
+    def emit(self, *arguments, indent=0):
+        print('    '* indent, *arguments, sep='', end='')
+
+    def emitAttributes(self, attributes, indent):
+        if len(attributes) == 0:
+            return 
+        self.emit("\n")
+        self.emit("attributes: (Array", indent=indent+2)
+        for key, value in attributes:
+            if len(attributes) > 1:
+                self.emit('\n')
+                self.emit('with: ', repr(key),'->', repr(value), indent=indent+3)
+            else:
+                self.emit(' with: ', repr(key),'->', repr(value))
+        self.emit(")")
+
+if __name__ == '__main__':
+    XMLTool().processCommandLine()
+
