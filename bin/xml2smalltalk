@@ -87,7 +87,7 @@ class XMLTool(libs.commandlib.CommandLineTool):
             self.emit(']')
 
     def emit(self, *arguments, indent=0):
-        print('    '* indent, *arguments, sep='', end='')
+        print('\t' * indent, *arguments, sep='', end='')
 
     def emitAttributes(self, attributes, indent):
         if len(attributes) == 0:
