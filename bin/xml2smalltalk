@@ -65,7 +65,7 @@ class XMLTool(libs.commandlib.CommandLineTool):
         parser.setContentHandler(handler)
         parser.parse(file)
         self.emit('writeContents\n\n\t')
-        self.traverse(handler.current, index=0, indent=2)
+        self.traverse(handler.current, index=0, indent=1)
 
     def traverse(self, element, index, indent):
         if index == 0:
