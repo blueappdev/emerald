@@ -5,9 +5,8 @@
 # Unpack an xlsx Excel file for the purpose of analyzing it.
 #
 
-import sys, zipfile, os.path, shutil, re
-
-TAG_RE = re.compile(r'(?s)<\?[^?]*\?>|<!--.*?-->|<!\[CDATA\[.*?\]\]>|</?[^>]+>')
+import sys, zipfile, os.path, shutil
+import libs.xml.formatting
 
 class ExcelUnpacker:
     def warning(self, *messages):
@@ -49,45 +48,10 @@ class ExcelUnpacker:
 
     def formatFile(self, file):
         print('    Format', file)
-        with open(file) as stream:
-            xml = stream.read()
-        stream = open(file+'_formatted', 'w')
-        newXml = self.format_xml(xml)
-        stream.write(newXml)
-        stream.close()
+        with open(file) as input:
+            with open(file+'_formatted', 'w') as output:
+                libs.xml.formatting.XMLFormatter().process(input, output)
         os.rename(file+'_formatted', file)
-
-    def format_xml(self, text, indent = '  '):
-        parts = []
-        pos = 0
-        level = 0
-
-        def emit(s):
-            if s.strip():
-                parts.append(indent * level + s.strip())
-
-        for m in TAG_RE.finditer(text):
-            if m.start() > pos:
-                emit(text[pos:m.start()])
-            token = m.group(0)
-            if token.startswith('<?'):
-                emit(token)    # preserve case
-            elif token.startswith('<!--') or token.startswith('<![CDATA['):
-                emit(token)
-            elif token.startswith('</'):
-                level = max(level-1, 0)
-                emit(token)
-            else:
-                is_self = token.endswith('/>')
-                emit(token)
-                if not is_self:
-                    level += 1
-            pos = m.end()
-    
-        if pos < len(text):
-            emit(text[pos:])
-
-        return '\n'.join(parts) + '\n'
 
 if __name__ == '__main__':
     ExcelUnpacker().processCommandLine(sys.argv)
