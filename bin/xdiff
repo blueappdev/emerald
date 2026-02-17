@@ -1009,7 +1009,7 @@ class DiffViewer(tk.Frame):
             if self.linesAreEqual(leftLine, rightLine):
                 return 0, 0, 0, 0
             first = self.first_diff(leftLine, rightLine)
-            last = self.last_diff(leftLine, rightLine)
+            last = self.last_diff(leftLine[first:], rightLine[first:])
             return first, last, first, last
 
 class DiffTool:
