@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 #
-# libs/xml.py
+# libs/xml/formatting.py
 #
 
 import os, sys, io

@@ -66,6 +66,7 @@ class XMLTool(libs.commandlib.CommandLineTool):
         parser.parse(file)
         self.emit('writeContents\n\n\t')
         self.traverse(handler.current, index=0, indent=1)
+        self.emit('\n\n')
 
     def traverse(self, element, index, indent):
         if index == 0:

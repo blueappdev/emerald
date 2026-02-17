@@ -70,10 +70,13 @@ def read_file(f, entry):
 
     data = f.read(csize)
 
+    print ('EXTRACT', name, csize)
+
     if comp == 0:          # stored
         return data
     elif comp == 8:        # deflate
-        return zlib.decompress(data, -15)
+        data=  zlib.decompress(data, -15)
+        return data
     else:
         raise NotImplementedError(comp)
 
