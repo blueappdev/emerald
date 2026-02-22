@@ -68,26 +68,39 @@ class GemStoneTests(unittest.TestCase):
         result = self.session.charToOop(65)
         self.assertEqual(result, 16668)
 
-    def testDoubleToSmallSouble(self):
+    def testDoubleToSmallDouble(self):
         result = self.session.doubleToSmallDouble(3.14)
         self.assertEqual(result, 9264444865456394742)
 
     def testI32ToOop(self):
         result = self.session.I32ToOop(3)
         self.assertEqual(result, gemstone.OOP_Three)
+        result = self.session.I32ToOop(-2)
+        self.assertEqual(result, gemstone.OOP_MinusTwo)
 
     def testOopToChar(self):
         result = self.session.oopToChar(16668)
         self.assertEqual(result, 65)
 
     def testResolveSymbol(self):
-        result = self.session.resolveSymbol('System')
-        self.assertEqual(result, 76033)
+        result = self.session.resolveSymbol('String')
+        self.assertEqual(result, gemstone.OOP_CLASS_STRING)
 
     def testResolveSymbolObj(self):
-        oop = self.session.newString('System')
+        oop = self.session.newString('String')
         result = self.session.resolveSymbolObj(oop)
-        self.assertEqual(result, 76033)
+        self.assertEqual(result, gemstone.OOP_CLASS_STRING)
+        oop = self.session.newString('Utf8')
+        result = self.session.resolveSymbolObj(oop)
+        self.assertEqual(result, gemstone.OOP_CLASS_Utf8)
+
+    def testExecute(self):
+        result = self.session.execute("4-6")  # returns an Oop
+        self.assertEqual(result, gemstone.OOP_MinusTwo)
+
+    def testExecuteWithUnderscore(self):
+        result = self.session.execute_("4-6")  # returns an Oop
+        self.assertEqual(result, gemstone.OOP_MinusTwo)
 
     def testExecuteFetchBytes(self):
         result = self.session.executeFetchBytes("'Hello', ' ', 'World'")

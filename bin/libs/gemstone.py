@@ -3,7 +3,7 @@
 # gemstone.py
 #
 
-import os.path
+import os.path, sys
 from ctypes import *
 
 GciSession = c_void_p
@@ -22,11 +22,15 @@ GCI_PERFORM_FLAG_INTERPRETED = 0x20
 
 OOP_ILLEGAL = 1
 OOP_NIL = 20
+OOP_MinusOne = 18446744073709551610
+OOP_MinusTwo = 18446744073709551602
+OOP_Zero = 2
 OOP_One = 10
 OOP_Two = 18
 OOP_Three = 26
 
 OOP_CLASS_STRING = 74753
+OOP_CLASS_Utf8 = 154113
 
 GCI_LOGIN_QUIET = 0x10
 
@@ -36,8 +40,8 @@ class Interface:
         self.library = CDLL(path)
 
         self.gciI32ToOop = self.library.GciI32ToOop
-        self.gciI32ToOop.restype = c_int32
-        self.gciI32ToOop.argtypes = [OopType]
+        self.gciI32ToOop.restype = OopType
+        self.gciI32ToOop.argtypes = [c_int32]
 
         self.gciTsAbort = self.library.GciTsAbort
         self.gciTsAbort.restype = c_bool
@@ -214,44 +218,40 @@ class Session:
             raise InvalidArgumentError()
         return result
 
-    def execute(self, session, aString) -> OopType:
-        print(f"execute({aString})")
+    def execute(self, aString) -> OopType:
+        self.print(f"execute({aString})")
         error = GciErrSType()
-        result = self.gciTsExecute(
-                session,
-                aString.encode('ascii'),
-                OOP_CLASS_STRING,
+        result = self._interface.gciTsExecute(
+                self._session_id,
+                aString.encode('utf-8'),
+                OOP_CLASS_Utf8,
                 OOP_ILLEGAL,
                 OOP_NIL,
                 0, 0, byref(error))
-        print("result", result)
         if result == OOP_ILLEGAL:
-            print("execute FAILED")
             raise GciException(error)
-        else:
-            print("execute SUCCESS")
         return result
 
-    def execute_(self, session, aString) -> OopType:
-        print(f"execute_({aString})")
+    def execute_(self, aString) -> OopType:
+        self.print(f"execute_({aString})")
         error = GciErrSType()
-        encodedString = aString.encode('ascii')
-        result = self.gciTsExecute_(
-                session,
-                encodedString,
-                len(encodedString),
-                154113,   # 74753=String, 154113=Utf8
-                OOP_ILLEGAL,
-                OOP_NIL,
-                0,
-                0,
-                byref(error))
-        print("execute_ result", result)
+        encodedString = aString.encode('utf-8')
+        result = self._interface.gciTsExecute_(
+                self._session_id,     # GciSession sess
+                encodedString,        # const *char sourceStr 
+                len(encodedString),   # ssize_t sourceSize
+                OOP_CLASS_Utf8,       # OopType sourceOop (OOP_CLASS_STRING or OOP_CLASS_Utf8)
+                OOP_ILLEGAL,          # OopType contextObject
+                OOP_NIL,              # OopType symbolList
+                0,                    # int flags 
+                0,                    # ushort environmentId 
+                byref(error))         # GciErrSType *err
+        self.print("execute_ result", result)
         if result == OOP_ILLEGAL:
-            print("execute_ FAILED")
+            self.print("execute_ FAILED")
             raise GciException(error)
         else:
-            print("execute_ SUCCESS")
+            self.print("execute_ SUCCESS")
         return result
 
     def executeFetchBytes(self, aString) -> str:
@@ -264,7 +264,7 @@ class Session:
                 self._session_id,       # GciSession sess
                 encodedString,          # const *char sourceStr
                 len(encodedString),     # ssize_t sourceSize`
-                74753,                  # 74753 is the oop of String, OopType sourceOop
+                OOP_CLASS_Utf8,         # OOP_CLASS_STRING, OOP_CLASS_Utf8
                 OOP_ILLEGAL,            # OopType contextObject
                 OOP_NIL,                # OopType symbolList
                 buffer,                 # Byte_Type *result
@@ -272,7 +272,6 @@ class Session:
                 byref(error))           # GciErrSType *err
         self.print("executeFetchBytes numberOfBytes", numberOfBytes)
         if numberOfBytes == -1:
-            print("executeFetchBytes FAILED")
             raise GciException(error)
         if numberOfBytes >= bufferSize:
             raise 'results exceeds buffer size'
@@ -318,7 +317,7 @@ class Session:
         result = buffer.value.decode('utf-8', errors='strict')
         return result
 
-    def I32ToOop(self, arg) -> c_int32:
+    def I32ToOop(self, arg) -> OopType:
         result = self._interface.gciI32ToOop(arg)
         return result
 
@@ -329,26 +328,17 @@ class Session:
               gem_host='localhost',
               stone='gs64stone',
               gs_user='DataCurator',
-              gs_password='swordfish',
-              netldi='netldi',
+              gs_password='',
+              netldi='gs64ldi',
               host_user='',
               host_password='') -> GciSession:
         stone_nrs = '!tcp@localhost#server!' + stone
         #gem_nrs = '!tcp@' + gem_host
         gem_nrs = '!tcp@' + gem_host + '#netldi:' + netldi + '#task!gemnetobject'
-        if host_user is None:
-            host_user = ''
-        else:
-            host_user = host_user.encode('ascii')
-        if host_password is None:
-            host_password = ''
-        else:
-            host_password = host_password.encode('ascii')
-        error = GciErrSType()
-        executedSessionInit = c_bool()
-
         #flags = 0
         flags = GCI_LOGIN_QUIET
+        executedSessionInit = c_bool()
+        error = GciErrSType()
 
         self.print('gciTsLogin')
         self.print('stone_nrs', stone_nrs)
@@ -362,17 +352,17 @@ class Session:
         self.print('haltOnErrNum')
         self.print('pGciErrSType')
         self._session_id = self._interface.gciTsLogin(
-            stone_nrs.encode('ascii'),
-            host_user,
-            host_password,
-            False,
-            gem_nrs.encode('ascii'),
-            gs_user.encode('ascii'),
-            gs_password.encode('ascii'),
-            flags,
-            0,
-            byref(executedSessionInit),
-            byref(error))
+            stone_nrs.encode('ascii'),        # const char *StoneNameNrs
+            host_user.encode('ascii'),        # const char *HostUserId
+            host_password.encode('ascii'),    # const char *HostPassword
+            False,                            # BoolType hostPwIsEncrypted
+            gem_nrs.encode('ascii'),          # const char *GemServiceNrs
+            gs_user.encode('ascii'),          # const char *gemstoneUsername
+            gs_password.encode('ascii'),      # const char *gemstonePassword
+            flags,                            # unsigned int loginFlags (per GCI_LOGIN* in gci.ht)
+            0,                                # int haltOnErrNum
+            byref(executedSessionInit),       # BoolType *executedSessionInit
+            byref(error))                     # GciErrSType *err
         self.print('session_id=', self._session_id)
         if self._session_id is None:
             raise GciException(error)
