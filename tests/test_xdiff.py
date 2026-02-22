@@ -22,7 +22,7 @@ class DiffTests(unittest.TestCase):
         self.check('Hello\n', 'Hello\n', (0,0,0,0))
 
     def testMissingWord(self):
-        self.check('Aaa missing theDogJumpsHappily\n', 'Aaa theDogJumpsHappily\n', (4, 20, 4, 20))
+        self.check('Aaa missing theDogJumpsHappily\n', 'Aaa theDogJumpsHappily\n', (4, 19, 4, 19))
 
     def testMissingSuffix(self):
         self.check('Hello\n', 'Hello World\n', (5, 1, 5, 1))
@@ -31,8 +31,8 @@ class DiffTests(unittest.TestCase):
         self.check('Better\n', 'Butter\n', (1, 5, 1, 5))
 
     def testSpace(self):
-        self.check('aa  bb\n', 'aa  bb\n', (0, 0, 0, 0))
-        self.check('aa  bb\n', 'aa   bb\n', (4, 5, 4, 5))
+        self.check('aa++bb\n', 'aa++bb\n', (0, 0, 0, 0))
+        self.check('aa++bb\n', 'aa+++bb\n', (4, 3, 4, 3))
 
 class TrailingBlankTests(unittest.TestCase):
     def check(self, left, right, expected):
