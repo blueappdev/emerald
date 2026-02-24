@@ -212,15 +212,18 @@ class Session:
         self.print(f"execute({aString})")
         error = GciErrSType()
         result = self.libgcits.GciTsExecute(
-                self._session_id,
-                aString.encode('utf-8'),
-                OOP_CLASS_Utf8,
-                OOP_ILLEGAL,
-                OOP_NIL,
-                0, 0, byref(error))
+                self._session_id,         # GciSession sess
+                aString.encode('utf-8'),  # const char* sourceStr
+                OOP_CLASS_Utf8,           # OopType sourceOop (OOP_CLASS_STRING or OOP_CLASS_Utf8)
+                OOP_ILLEGAL,              # OopType contextObject
+                OOP_NIL,                  # OopType symbolList
+                0,                        # int flags, per GCI_PERFORM_FLAG* in gcicmn.ht 
+                0,                        # ushort environmentId /* normally zero*/,
+                byref(error))             # GciErrSType *err
         if result == OOP_ILLEGAL:
             raise GciException(error)
         return result
+
 
     def execute_(self, aString) -> OopType:
         self.print(f"execute_({aString})")
@@ -325,8 +328,8 @@ class Session:
         stone_nrs = '!tcp@localhost#server!' + stone
         #gem_nrs = '!tcp@' + gem_host
         gem_nrs = '!tcp@' + gem_host + '#netldi:' + netldi + '#task!gemnetobject'
-        #flags = 0
-        flags = GCI_LOGIN_QUIET
+        #loginFlags = 0
+        loginFlags = GCI_LOGIN_QUIET
         executedSessionInit = c_bool()
         error = GciErrSType()
 
@@ -338,7 +341,7 @@ class Session:
         self.print('GemServiceNrs', gem_nrs)
         self.print('gemstoneUsername', gs_user)
         self.print('gemstonePassword', gs_password)
-        self.print('loginFlag', flags)
+        self.print('loginFlag', loginFlags)
         self.print('haltOnErrNum')
         self.print('pGciErrSType')
         self._session_id = self.libgcits.GciTsLogin(
@@ -349,7 +352,7 @@ class Session:
             gem_nrs.encode('ascii'),          # const char *GemServiceNrs
             gs_user.encode('ascii'),          # const char *gemstoneUsername
             gs_password.encode('ascii'),      # const char *gemstonePassword
-            flags,                            # unsigned int loginFlags (per GCI_LOGIN* in gci.ht)
+            loginFlags,                       # unsigned int loginFlags (per GCI_LOGIN* in gci.ht)
             0,                                # int haltOnErrNum
             byref(executedSessionInit),       # BoolType *executedSessionInit
             byref(error))                     # GciErrSType *err
@@ -443,15 +446,16 @@ class GciErrSType(Structure):
         return 'aGciErrSType'
 
     def __str__(self):
-        return ('GciErrSType(category=' + hex(self.category) +   
-               ', context=' + hex(self.context) +               
-               ', exceptionObj=' + hex(self.exceptionObj) +     
-               ', args=' + str(list(map(hex, self.args))[0:self.argCount]) +     
-               ', number=' + str(self.number) +                 
-               ', argCount=' + str(self.argCount) +             
-               ', fatal=' + str(self.fatal) +                   
-               ', message=' + str(self.message) +               
-               ', reason=' + str(self.reason) + ')')
+        return (f'GciErrSType(' +
+                f'category={hex(self.category)},' +   
+                f'context={hex(self.context)},' +               
+                f'exceptionObj={hex(self.exceptionObj)},' +     
+                f'args={str(list(map(hex, self.args))[0:self.argCount])},' +     
+                f'number={str(self.number)},' +                 
+                f'argCount={str(self.argCount)},' +             
+                f'fatal={str(self.fatal)},' +                   
+                f'message={str(self.message)},' +               
+                f'reason={str(self.reason)})')
 
 # Base class for other exceptions
 class Error(Exception):
@@ -463,11 +467,11 @@ class InvalidArgumentError(Error):
 
 class GciException(Error):
 
-    def __init__(self, ex: GciErrSType):
-        super().__init__(str(ex.message))
-        self.ex = ex
+    def __init__(self, anException: GciErrSType):
+        super().__init__(str(anException.message))
+        self.exception = anException
 
     def number(self):
-        return self.ex.number
+        return self.exception.number
 
 
