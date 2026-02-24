@@ -34,38 +34,30 @@ OOP_CLASS_Utf8 = 154113
 
 GCI_LOGIN_QUIET = 0x10
 
-class Interface:
-    def __init__(self):
+def loadLibrary():
         path = os.path.expandvars('$GEMSTONE/lib/libgcits-3.6.2-64.so')
-        self.library = CDLL(path)
+        library = CDLL(path)
 
-        self.gciI32ToOop = self.library.GciI32ToOop
-        self.gciI32ToOop.restype = OopType
-        self.gciI32ToOop.argtypes = [c_int32]
+        library.GciI32ToOop.restype = OopType
+        library.GciI32ToOop.argtypes = [c_int32]
 
-        self.gciTsAbort = self.library.GciTsAbort
-        self.gciTsAbort.restype = c_bool
-        self.gciTsAbort.argtypes = [GciSession, POINTER(GciErrSType)]
+        library.GciTsAbort.restype = c_bool
+        library.GciTsAbort.argtypes = [GciSession, POINTER(GciErrSType)]
 
-        self.gciTsBegin = self.library.GciTsBegin
-        self.gciTsBegin.restype = c_bool
-        self.gciTsBegin.argtypes = [GciSession, POINTER(GciErrSType)]
+        library.GciTsBegin.restype = c_bool
+        library.GciTsBegin.argtypes = [GciSession, POINTER(GciErrSType)]
 
-        self.gciTsCharToOop = self.library.GciTsCharToOop
-        self.gciTsCharToOop.restype = OopType
-        self.gciTsCharToOop.argtypes = [c_uint]
+        library.GciTsCharToOop.restype = OopType
+        library.GciTsCharToOop.argtypes = [c_uint]
 
-        self.gciTsCommit = self.library.GciTsCommit
-        self.gciTsCommit.restype = c_bool
-        self.gciTsCommit.argtypes = [GciSession, POINTER(GciErrSType)]
+        library.GciTsCommit.restype = c_bool
+        library.GciTsCommit.argtypes = [GciSession, POINTER(GciErrSType)]
 
-        self.gciTsDoubleToSmallDouble = self.library.GciTsDoubleToSmallDouble
-        self.gciTsDoubleToSmallDouble.restype = OopType
-        self.gciTsDoubleToSmallDouble.argtypes = [c_double]
+        library.GciTsDoubleToSmallDouble.restype = OopType
+        library.GciTsDoubleToSmallDouble.argtypes = [c_double]
 
-        self.gciTsExecute = self.library.GciTsExecute
-        self.gciTsExecute.restype = OopType
-        self.gciTsExecute.argtypes = [
+        library.GciTsExecute.restype = OopType
+        library.GciTsExecute.argtypes = [
                 GciSession,            # GciSession sess
                 c_char_p,              # const *char sourceStr 
                 OopType,               # OopType sourceOop
@@ -76,9 +68,8 @@ class Interface:
                 POINTER(GciErrSType)   # GciErrSType *err
             ]
 
-        self.gciTsExecute_ = self.library.GciTsExecute_
-        self.gciTsExecute_.restype = OopType
-        self.gciTsExecute_.argtypes = [
+        library.GciTsExecute_.restype = OopType
+        library.GciTsExecute_.argtypes = [
                 GciSession,            # GciSession sess
                 c_char_p,              # const *char sourceStr 
                 c_ssize_t,             # ssize_t sourceSize
@@ -90,9 +81,8 @@ class Interface:
                 POINTER(GciErrSType)   # GciErrSType *err
             ]
 
-        self.gciTsExecuteFetchBytes = self.library.GciTsExecuteFetchBytes
-        self.gciTsExecuteFetchBytes.restype = c_ssize_t
-        self.gciTsExecuteFetchBytes.argtypes = [
+        library.GciTsExecuteFetchBytes.restype = c_ssize_t
+        library.GciTsExecuteFetchBytes.argtypes = [
                 GciSession,            # GciSession sess
                 c_char_p,              # const *char sourceStr
                 c_ssize_t,             # ssize_t sourceSize
@@ -104,19 +94,17 @@ class Interface:
                 POINTER(GciErrSType)   # GciErrSType *err
             ]
 
-        self.gciTsFetchTraversal = self.library.GciTsFetchTraversal
-        self.gciTsFetchTraversal.restype = c_int
-        self.gciTsFetchTraversal.argtypes = [
-                GciSession,             # GciSession session
-                POINTER(OopType)        # const OopType *theOops
-                POINTER(GciClampedTravArgsSType)    # GciErrSType *err
-                POINTER(GciErrSType)    # GciErrSType *err
-            ]    
+        #library.GciTsFetchTraversal.restype = c_int
+        #library.GciTsFetchTraversal.argtypes = [
+        #        GciSession,             # GciSession session
+        #        POINTER(OopType)        # const OopType *theOops
+        #        POINTER(GciClampedTravArgsSType)    # GciErrSType *err
+        #        POINTER(GciErrSType)    # GciErrSType *err
+        #    ]    
 
 
-        self.gciTsLogin = self.library.GciTsLogin
-        self.gciTsLogin.restype = GciSession
-        self.gciTsLogin.argtypes = [
+        library.GciTsLogin.restype = GciSession
+        library.GciTsLogin.argtypes = [
                 c_char_p,              # const char *StoneNameNrs
                 c_char_p,              # const char *HostUserId
                 c_char_p,              # const char *HostPassword
@@ -130,29 +118,23 @@ class Interface:
                 POINTER(GciErrSType)   # GciErrSType *err
             ]
 
-        self.gciTsLogout = self.library.GciTsLogout
-        self.gciTsLogout.restype = c_bool
-        self.gciTsLogout.argtypes = [GciSession, POINTER(GciErrSType)]
+        library.GciTsLogout.restype = c_bool
+        library.GciTsLogout.argtypes = [GciSession, POINTER(GciErrSType)]
 
-        self.gciTsNewString = self.library.GciTsNewString
-        self.gciTsNewString.restype = OopType
-        self.gciTsNewString.argtypes = [GciSession, c_char_p, POINTER(GciErrSType)]
+        library.GciTsNewString.restype = OopType
+        library.GciTsNewString.argtypes = [GciSession, c_char_p, POINTER(GciErrSType)]
 
-        self.gciTsNewSymbol = self.library.GciTsNewSymbol
-        self.gciTsNewSymbol.restype = OopType
-        self.gciTsNewSymbol.argtypes = [GciSession, c_char_p, POINTER(GciErrSType)]
+        library.GciTsNewSymbol.restype = OopType
+        library.GciTsNewSymbol.argtypes = [GciSession, c_char_p, POINTER(GciErrSType)]
 
-        self.gciTsOopIsSpecial = self.library.GciTsOopIsSpecial
-        self.gciTsOopIsSpecial.restype = c_bool
-        self.gciTsOopIsSpecial.argtypes = [OopType]
+        library.GciTsOopIsSpecial.restype = c_bool
+        library.GciTsOopIsSpecial.argtypes = [OopType]
 
-        self.gciTsOopToChar = self.library.GciTsOopToChar
-        self.gciTsOopToChar.restype = c_int
-        self.gciTsOopToChar.argtypes = [OopType]
+        library.GciTsOopToChar.restype = c_int
+        library.GciTsOopToChar.argtypes = [OopType]
 
-        self.gciTsPerform = self.library.GciTsPerform
-        self.gciTsPerform.restype = OopType
-        self.gciTsPerform.argtypes = [
+        library.GciTsPerform.restype = OopType
+        library.GciTsPerform.argtypes = [
                 GciSession,            # GciSession sess
                 OopType,               # OopType receiver
                 OopType,               # OopType aSymbol
@@ -164,9 +146,8 @@ class Interface:
                 POINTER(GciErrSType)   # GciErrSType *err
             ]
 
-        self.gciTsPerformFetchBytes = self.library.GciTsPerformFetchBytes
-        self.gciTsPerformFetchBytes.restype = c_ssize_t
-        self.gciTsPerformFetchBytes.argtypes = [
+        library.GciTsPerformFetchBytes.restype = c_ssize_t
+        library.GciTsPerformFetchBytes.argtypes = [
                 GciSession,            # GciSession sess
                 OopType,               # OopType receiver
                 c_char_p,              # const *char selectorStr
@@ -177,26 +158,25 @@ class Interface:
                 POINTER(GciErrSType)   # GciErrSType *err
             ]
 
-        self.gciTsResolveSymbol = self.library.GciTsResolveSymbol
-        self.gciTsResolveSymbol.restype = OopType
-        self.gciTsResolveSymbol.argtypes = [GciSession, c_char_p, OopType, POINTER(GciErrSType)]
+        library.GciTsResolveSymbol.restype = OopType
+        library.GciTsResolveSymbol.argtypes = [GciSession, c_char_p, OopType, POINTER(GciErrSType)]
 
-        self.gciTsResolveSymbolObj = self.library.GciTsResolveSymbolObj
-        self.gciTsResolveSymbolObj.restype = OopType
-        self.gciTsResolveSymbolObj.argtypes = [GciSession, OopType, OopType, POINTER(GciErrSType)]
+        library.GciTsResolveSymbolObj.restype = OopType
+        library.GciTsResolveSymbolObj.argtypes = [GciSession, OopType, OopType, POINTER(GciErrSType)]
 
-        self.gciTsSessionIsRemote = self.library.GciTsSessionIsRemote
-        self.gciTsSessionIsRemote.restype = c_int
-        self.gciTsSessionIsRemote.argtypes = [GciSession]
+        library.GciTsSessionIsRemote.restype = c_int
+        library.GciTsSessionIsRemote.argtypes = [GciSession]
 
-        self.gciTsVersion = self.library.GciTsVersion
-        self.gciTsVersion.restype = c_int
-        self.gciTsVersion.argtypes = [c_char_p, c_size_t]
+        library.GciTsVersion.restype = c_int
+        library.GciTsVersion.argtypes = [c_char_p, c_size_t]
+
+        return library
 
 
 class Session:
     def __init__(self, verbose=False):
-        self._interface=Interface()
+        self.libgcits = loadLibrary()
+
         self._session_id = None
         self.verbose = verbose
 
@@ -206,24 +186,24 @@ class Session:
 
     def abort(self) -> None:
         error = GciErrSType()
-        if not self._interface.gciTsAbort(self._session_id, byref(error)):
+        if not self.libgcits.GciTsAbort(self._session_id, byref(error)):
             raise GciException(error)
         return None
 
     def begin(self) -> None:
         error = GciErrSType()
-        if not self._interface.gciTsBegin(self._session_id, byref(error)):
+        if not self.libgcits.GciTsBegin(self._session_id, byref(error)):
             raise GciException(error)
         return None
 
     def commit(self) -> None:
         error = GciErrSType()
-        if not self._interface.gciTsCommit(self._session_id, byref(error)):
+        if not self.libgcits.GciTsCommit(self._session_id, byref(error)):
             raise GciException(error)
         return None
 
     def doubleToSmallDouble(self, aFloat) -> c_double:
-        result = self._interface.gciTsDoubleToSmallDouble(aFloat)
+        result = self.libgcits.GciTsDoubleToSmallDouble(aFloat)
         if result == OOP_ILLEGAL:
             raise InvalidArgumentError()
         return result
@@ -231,7 +211,7 @@ class Session:
     def execute(self, aString) -> OopType:
         self.print(f"execute({aString})")
         error = GciErrSType()
-        result = self._interface.gciTsExecute(
+        result = self.libgcits.GciTsExecute(
                 self._session_id,
                 aString.encode('utf-8'),
                 OOP_CLASS_Utf8,
@@ -246,7 +226,7 @@ class Session:
         self.print(f"execute_({aString})")
         error = GciErrSType()
         encodedString = aString.encode('utf-8')
-        result = self._interface.gciTsExecute_(
+        result = self.libgcits.GciTsExecute_(
                 self._session_id,     # GciSession sess
                 encodedString,        # const *char sourceStr 
                 len(encodedString),   # ssize_t sourceSize
@@ -270,7 +250,7 @@ class Session:
         bufferSize = 1000000
         buffer = create_string_buffer(bufferSize)
         error = GciErrSType()
-        numberOfBytes = self._interface.gciTsExecuteFetchBytes(
+        numberOfBytes = self.libgcits.GciTsExecuteFetchBytes(
                 self._session_id,       # GciSession sess
                 encodedString,          # const *char sourceStr
                 len(encodedString),     # ssize_t sourceSize`
@@ -292,7 +272,7 @@ class Session:
 
     def perform(self, receiver : OopType, aSymbol : OopType, selectorStr, arguments) -> OopType:
         error = GciErrSType()
-        result = self._interface.gciTsPerform(
+        result = self.libgcits.GciTsPerform(
                 self._session_id,       # GciSession sess
                 receiver,               # OopType receiver
                 aSymbol,                # OopType aSymbol
@@ -311,7 +291,7 @@ class Session:
         bufferSize = 1000000
         buffer = create_string_buffer(bufferSize)
         error = GciErrSType()
-        numberOfBytes = self._interface.gciTsPerformFetchBytes(
+        numberOfBytes = self.libgcits.GciTsPerformFetchBytes(
                 self._session_id,       # GciSession sess
                 receiver,               # OopType receiver
                 selectorStr.encode('utf-8'),   # const char* selectorStr
@@ -328,11 +308,11 @@ class Session:
         return result
 
     def I32ToOop(self, arg) -> OopType:
-        result = self._interface.gciI32ToOop(arg)
+        result = self.libgcits.GciI32ToOop(arg)
         return result
 
     def isSessionValid(self) -> bool:
-        return self._interface.gciTsSessionIsRemote(self._session_id) == 1
+        return self.libgcits.GciTsSessionIsRemote(self._session_id) == 1
 
     def login(self,
               gem_host='localhost',
@@ -361,7 +341,7 @@ class Session:
         self.print('loginFlag', flags)
         self.print('haltOnErrNum')
         self.print('pGciErrSType')
-        self._session_id = self._interface.gciTsLogin(
+        self._session_id = self.libgcits.GciTsLogin(
             stone_nrs.encode('ascii'),        # const char *StoneNameNrs
             host_user.encode('ascii'),        # const char *HostUserId
             host_password.encode('ascii'),    # const char *HostPassword
@@ -379,12 +359,12 @@ class Session:
 
     def logout(self) -> None:
         error = GciErrSType()
-        if not self._interface.gciTsLogout(self._session_id, byref(error)):
+        if not self.libgcits.GciTsLogout(self._session_id, byref(error)):
             raise GciException(error)
 
     def newString(self, str) -> OopType:
         error = GciErrSType()
-        result = self._interface.gciTsNewString(
+        result = self.libgcits.GciTsNewString(
                 self._session_id, 
                 str.encode('utf-8'), 
                 byref(error))
@@ -394,7 +374,7 @@ class Session:
 
     def newSymbol(self, str) -> OopType:
         error = GciErrSType()
-        result = self._interface.gciTsNewSymbol(
+        result = self.libgcits.GciTsNewSymbol(
                 self._session_id, 
                 str.encode('utf-8'), 
                 byref(error))
@@ -404,17 +384,17 @@ class Session:
 
 
     def oopIsSpecial(self, oop) -> c_bool:
-        result = self._interface.gciTsOopIsSpecial(oop)
+        result = self.libgcits.GciTsOopIsSpecial(oop)
         return result
 
     def oopToChar(self, oop) -> c_int:
-        result = self._interface.gciTsOopToChar(oop)
+        result = self.libgcits.GciTsOopToChar(oop)
         # should check for -1
         return result
 
     def resolveSymbol(self, symbolName : str) -> OopType:
         error = GciErrSType()
-        result = self._interface.gciTsResolveSymbol(
+        result = self.libgcits.GciTsResolveSymbol(
                 self._session_id, 
                 symbolName.encode('ascii'), 
                 OOP_NIL, 
@@ -425,7 +405,7 @@ class Session:
 
     def resolveSymbolObj(self, symbolName : OopType) -> OopType:
         error = GciErrSType()
-        result = self._interface.gciTsResolveSymbolObj(
+        result = self.libgcits.GciTsResolveSymbolObj(
                 self._session_id, 
                 symbolName, 
                 OOP_NIL, 
@@ -436,12 +416,12 @@ class Session:
 
     def version(self) -> str:
         buffer = create_string_buffer(256)
-        code = self._interface.gciTsVersion(buffer, sizeof(buffer))
+        code = self.libgcits.GciTsVersion(buffer, sizeof(buffer))
         assert code == 3
         return buffer.value.decode('ascii')
 
     def charToOop(self, ch) -> OopType:
-        oop = self._interface.gciTsCharToOop(ch)
+        oop = self.libgcits.GciTsCharToOop(ch)
         # should check for 1 (OOP_ILLEGAL)
         return oop
 
