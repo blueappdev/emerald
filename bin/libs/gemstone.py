@@ -104,6 +104,16 @@ class Interface:
                 POINTER(GciErrSType)   # GciErrSType *err
             ]
 
+        self.gciTsFetchTraversal = self.library.GciTsFetchTraversal
+        self.gciTsFetchTraversal.restype = c_int
+        self.gciTsFetchTraversal.argtypes = [
+                GciSession,             # GciSession session
+                POINTER(OopType)        # const OopType *theOops
+                POINTER(GciClampedTravArgsSType)    # GciErrSType *err
+                POINTER(GciErrSType)    # GciErrSType *err
+            ]    
+
+
         self.gciTsLogin = self.library.GciTsLogin
         self.gciTsLogin.restype = GciSession
         self.gciTsLogin.argtypes = [

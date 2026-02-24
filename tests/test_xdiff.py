@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 #
-# test_gemstone.py
+# test_xdiff.py
 #
 
 import os, sys, unittest, configparser

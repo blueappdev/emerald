@@ -85,6 +85,8 @@ class GemStoneTests(unittest.TestCase):
     def testResolveSymbol(self):
         result = self.session.resolveSymbol('String')
         self.assertEqual(result, gemstone.OOP_CLASS_STRING)
+        result = self.session.resolveSymbol('Utf8')
+        self.assertEqual(result, gemstone.OOP_CLASS_Utf8)
 
     def testResolveSymbolObj(self):
         oop = self.session.newString('String')
