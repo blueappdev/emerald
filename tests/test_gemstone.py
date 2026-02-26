@@ -20,7 +20,7 @@ class GemStoneTests(unittest.TestCase):
         cls.session = gemstone.Session()
 
         configuration = configparser.ConfigParser()
-        configuration.read('conf/test_gemstone.ini')
+        configuration.read('etc/test_gemstone.ini')
         gem_host = configuration.get('gemstone', 'gem_host')
         stone = configuration.get('gemstone', 'stone')
         gs_user = configuration.get('gemstone', 'gs_user')
