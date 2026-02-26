@@ -3,12 +3,13 @@
 # gemstone.py
 #
 
-import os.path, sys
+import os.path, sys, platform
 from ctypes import *
 
 GciSession = c_void_p
 OopType = c_uint64
 ByteType = c_ubyte
+BoolType = c_int
 
 GCI_ERR_STR_SIZE = 1024
 GCI_ERR_reasonSize = GCI_ERR_STR_SIZE
@@ -35,142 +36,150 @@ OOP_CLASS_Utf8 = 154113
 GCI_LOGIN_QUIET = 0x10
 
 def loadLibrary():
+    system = platform.system()
+    if system == 'Linux':
         path = os.path.expandvars('$GEMSTONE/lib/libgcits-3.6.2-64.so')
-        library = CDLL(path)
+    elif system == 'Windows':
+        path = os.path.expandvars('$GEMSTONE/bin/libgcits-3.6.2-64.dll')
+    elif system == 'Darwin':
+        path = os.path.expandvars('$GEMSTONE/lib/libgcits-3.6.2-64.dylib')
+    else:
+        raise Exception(f'unexpected platform {repr(system)}')
+    library = CDLL(path)
 
-        library.GciI32ToOop.restype = OopType
-        library.GciI32ToOop.argtypes = [c_int32]
+    library.GciI32ToOop.restype = OopType
+    library.GciI32ToOop.argtypes = [c_int32]
 
-        library.GciTsAbort.restype = c_bool
-        library.GciTsAbort.argtypes = [GciSession, POINTER(GciErrSType)]
+    library.GciTsAbort.restype = c_bool
+    library.GciTsAbort.argtypes = [GciSession, POINTER(GciErrSType)]
 
-        library.GciTsBegin.restype = c_bool
-        library.GciTsBegin.argtypes = [GciSession, POINTER(GciErrSType)]
+    library.GciTsBegin.restype = c_bool
+    library.GciTsBegin.argtypes = [GciSession, POINTER(GciErrSType)]
 
-        library.GciTsCharToOop.restype = OopType
-        library.GciTsCharToOop.argtypes = [c_uint]
+    library.GciTsCharToOop.restype = OopType
+    library.GciTsCharToOop.argtypes = [c_uint]
 
-        library.GciTsCommit.restype = c_bool
-        library.GciTsCommit.argtypes = [GciSession, POINTER(GciErrSType)]
+    library.GciTsCommit.restype = c_bool
+    library.GciTsCommit.argtypes = [GciSession, POINTER(GciErrSType)]
 
-        library.GciTsDoubleToSmallDouble.restype = OopType
-        library.GciTsDoubleToSmallDouble.argtypes = [c_double]
+    library.GciTsDoubleToSmallDouble.restype = OopType
+    library.GciTsDoubleToSmallDouble.argtypes = [c_double]
 
-        library.GciTsExecute.restype = OopType
-        library.GciTsExecute.argtypes = [
-                GciSession,            # GciSession sess
-                c_char_p,              # const *char sourceStr 
-                OopType,               # OopType sourceOop
-                OopType,               # OopType contextObject
-                OopType,               # OopType symbolList
-                c_int,                 # int flags 
-                c_ushort,              # ushort environmentId 
-                POINTER(GciErrSType)   # GciErrSType *err
-            ]
+    library.GciTsExecute.restype = OopType
+    library.GciTsExecute.argtypes = [
+            GciSession,            # GciSession sess
+            c_char_p,              # const *char sourceStr 
+            OopType,               # OopType sourceOop
+            OopType,               # OopType contextObject
+            OopType,               # OopType symbolList
+            c_int,                 # int flags 
+            c_ushort,              # ushort environmentId 
+            POINTER(GciErrSType)   # GciErrSType *err
+        ]
 
-        library.GciTsExecute_.restype = OopType
-        library.GciTsExecute_.argtypes = [
-                GciSession,            # GciSession sess
-                c_char_p,              # const *char sourceStr 
-                c_ssize_t,             # ssize_t sourceSize
-                OopType,               # OopType sourceOop
-                OopType,               # OopType contextObject
-                OopType,               # OopType symbolList
-                c_int,                 # int flags 
-                c_ushort,              # ushort environmentId 
-                POINTER(GciErrSType)   # GciErrSType *err
-            ]
+    library.GciTsExecute_.restype = OopType
+    library.GciTsExecute_.argtypes = [
+            GciSession,            # GciSession sess
+            c_char_p,              # const *char sourceStr 
+            c_ssize_t,             # ssize_t sourceSize
+            OopType,               # OopType sourceOop
+            OopType,               # OopType contextObject
+            OopType,               # OopType symbolList
+            c_int,                 # int flags 
+            c_ushort,              # ushort environmentId 
+            POINTER(GciErrSType)   # GciErrSType *err
+        ]
 
-        library.GciTsExecuteFetchBytes.restype = c_ssize_t
-        library.GciTsExecuteFetchBytes.argtypes = [
-                GciSession,            # GciSession sess
-                c_char_p,              # const *char sourceStr
-                c_ssize_t,             # ssize_t sourceSize
-                OopType,               # OopType sourceOop
-                OopType,               # OopType contextObject
-                OopType,               # OopType symbolList
-                c_char_p,              # Byte_Type *result
-                c_ssize_t,             # ssize_t maxResultSize
-                POINTER(GciErrSType)   # GciErrSType *err
-            ]
+    library.GciTsExecuteFetchBytes.restype = c_ssize_t
+    library.GciTsExecuteFetchBytes.argtypes = [
+            GciSession,            # GciSession sess
+            c_char_p,              # const *char sourceStr
+            c_ssize_t,             # ssize_t sourceSize
+            OopType,               # OopType sourceOop
+            OopType,               # OopType contextObject
+            OopType,               # OopType symbolList
+            c_char_p,              # Byte_Type *result
+            c_ssize_t,             # ssize_t maxResultSize
+            POINTER(GciErrSType)   # GciErrSType *err
+        ]
 
-        #library.GciTsFetchTraversal.restype = c_int
-        #library.GciTsFetchTraversal.argtypes = [
-        #        GciSession,             # GciSession session
-        #        POINTER(OopType)        # const OopType *theOops
-        #        POINTER(GciClampedTravArgsSType)    # GciErrSType *err
-        #        POINTER(GciErrSType)    # GciErrSType *err
-        #    ]    
+    #library.GciTsFetchTraversal.restype = c_int
+    #library.GciTsFetchTraversal.argtypes = [
+    #        GciSession,             # GciSession session
+    #        POINTER(OopType)        # const OopType *theOops
+    #        POINTER(GciClampedTravArgsSType)    # GciErrSType *err
+    #        POINTER(GciErrSType)    # GciErrSType *err
+    #    ]    
 
 
-        library.GciTsLogin.restype = GciSession
-        library.GciTsLogin.argtypes = [
-                c_char_p,              # const char *StoneNameNrs
-                c_char_p,              # const char *HostUserId
-                c_char_p,              # const char *HostPassword
-                c_bool,                # BoolType hostPwIsEncrypted
-                c_char_p,              # const char *GemServiceNrs
-                c_char_p,              # const char *gemstoneUsername
-                c_char_p,              # const char *gemstonePassword
-                c_uint,                # unsigned int loginFlags (per GCI_LOGIN* in gci.ht)
-                c_int,                 # int haltOnErrNum
-                POINTER(c_bool),       # BoolType *executedSessionInit
-                POINTER(GciErrSType)   # GciErrSType *err
-            ]
+    library.GciTsLogin.restype = GciSession
+    library.GciTsLogin.argtypes = [
+            c_char_p,              # const char *StoneNameNrs
+            c_char_p,              # const char *HostUserId
+            c_char_p,              # const char *HostPassword
+            c_bool,                # BoolType hostPwIsEncrypted
+            c_char_p,              # const char *GemServiceNrs
+            c_char_p,              # const char *gemstoneUsername
+            c_char_p,              # const char *gemstonePassword
+            c_uint,                # unsigned int loginFlags (per GCI_LOGIN* in gci.ht)
+            c_int,                 # int haltOnErrNum
+            POINTER(c_bool),       # BoolType *executedSessionInit
+            POINTER(GciErrSType)   # GciErrSType *err
+        ]
 
-        library.GciTsLogout.restype = c_bool
-        library.GciTsLogout.argtypes = [GciSession, POINTER(GciErrSType)]
+    library.GciTsLogout.restype = c_bool
+    library.GciTsLogout.argtypes = [GciSession, POINTER(GciErrSType)]
 
-        library.GciTsNewString.restype = OopType
-        library.GciTsNewString.argtypes = [GciSession, c_char_p, POINTER(GciErrSType)]
+    library.GciTsNewString.restype = OopType
+    library.GciTsNewString.argtypes = [GciSession, c_char_p, POINTER(GciErrSType)]
 
-        library.GciTsNewSymbol.restype = OopType
-        library.GciTsNewSymbol.argtypes = [GciSession, c_char_p, POINTER(GciErrSType)]
+    library.GciTsNewSymbol.restype = OopType
+    library.GciTsNewSymbol.argtypes = [GciSession, c_char_p, POINTER(GciErrSType)]
 
-        library.GciTsOopIsSpecial.restype = c_bool
-        library.GciTsOopIsSpecial.argtypes = [OopType]
+    library.GciTsOopIsSpecial.restype = c_bool
+    library.GciTsOopIsSpecial.argtypes = [OopType]
 
-        library.GciTsOopToChar.restype = c_int
-        library.GciTsOopToChar.argtypes = [OopType]
+    library.GciTsOopToChar.restype = c_int
+    library.GciTsOopToChar.argtypes = [OopType]
 
-        library.GciTsPerform.restype = OopType
-        library.GciTsPerform.argtypes = [
-                GciSession,            # GciSession sess
-                OopType,               # OopType receiver
-                OopType,               # OopType aSymbol
-                c_char_p,              # const *char selectorStr
-                POINTER(OopType),      # OopType *args
-                c_int,                 # int numArgs
-                c_int,                 # int flags (per GCI_PERFORM_FLAG* in gcicmn.ht)
-                c_ushort,              # ushort environmentId (normally zero)
-                POINTER(GciErrSType)   # GciErrSType *err
-            ]
+    library.GciTsPerform.restype = OopType
+    library.GciTsPerform.argtypes = [
+            GciSession,            # GciSession sess
+            OopType,               # OopType receiver
+            OopType,               # OopType aSymbol
+            c_char_p,              # const *char selectorStr
+            POINTER(OopType),      # OopType *args
+            c_int,                 # int numArgs
+            c_int,                 # int flags (per GCI_PERFORM_FLAG* in gcicmn.ht)
+            c_ushort,              # ushort environmentId (normally zero)
+            POINTER(GciErrSType)   # GciErrSType *err
+        ]
 
-        library.GciTsPerformFetchBytes.restype = c_ssize_t
-        library.GciTsPerformFetchBytes.argtypes = [
-                GciSession,            # GciSession sess
-                OopType,               # OopType receiver
-                c_char_p,              # const *char selectorStr
-                POINTER(OopType),      # OopType *args
-                c_int,                 # int numArgs
-                c_char_p,              # Byte_Type *result
-                c_ssize_t,             # ssize_t maxResultSize
-                POINTER(GciErrSType)   # GciErrSType *err
-            ]
+    library.GciTsPerformFetchBytes.restype = c_ssize_t
+    library.GciTsPerformFetchBytes.argtypes = [
+            GciSession,            # GciSession sess
+            OopType,               # OopType receiver
+            c_char_p,              # const *char selectorStr
+            POINTER(OopType),      # OopType *args
+            c_int,                 # int numArgs
+            c_char_p,              # Byte_Type *result
+            c_ssize_t,             # ssize_t maxResultSize
+            POINTER(GciErrSType)   # GciErrSType *err
+        ]
 
-        library.GciTsResolveSymbol.restype = OopType
-        library.GciTsResolveSymbol.argtypes = [GciSession, c_char_p, OopType, POINTER(GciErrSType)]
+    library.GciTsResolveSymbol.restype = OopType
+    library.GciTsResolveSymbol.argtypes = [GciSession, c_char_p, OopType, POINTER(GciErrSType)]
 
-        library.GciTsResolveSymbolObj.restype = OopType
-        library.GciTsResolveSymbolObj.argtypes = [GciSession, OopType, OopType, POINTER(GciErrSType)]
+    library.GciTsResolveSymbolObj.restype = OopType
+    library.GciTsResolveSymbolObj.argtypes = [GciSession, OopType, OopType, POINTER(GciErrSType)]
 
-        library.GciTsSessionIsRemote.restype = c_int
-        library.GciTsSessionIsRemote.argtypes = [GciSession]
+    library.GciTsSessionIsRemote.restype = c_int
+    library.GciTsSessionIsRemote.argtypes = [GciSession]
 
-        library.GciTsVersion.restype = c_int
-        library.GciTsVersion.argtypes = [c_char_p, c_size_t]
+    library.GciTsVersion.restype = c_int
+    library.GciTsVersion.argtypes = [c_char_p, c_size_t]
 
-        return library
+    return library
 
 
 class Session:
@@ -475,3 +484,24 @@ class GciException(Error):
         return self.exception.number
 
 
+class GciClampedTravArgsSType(Structure):
+    _fields_ = [
+        ('clampSpec',       OopType),   # error dictionary
+        ('resultOop',       OopType),   # a GsProcess
+        ('travBuff',        OopType),   # GciTravBufType *travBuff
+        ('level',           c_int),     # int level
+        ('retrievalFlags',  c_int),     # int retrievalFlags
+        ('isRpc',           BoolType),  # private
+    ]
+
+    def __repr__(self):
+        return 'aGciClampedTravArgsSType'
+
+    def __str__(self):
+        return (f'GciClampedTravArgsSType(' +
+                f'clampSpec={hex(self.clampSpec)},' +   
+                f'resultOop={hex(self.resultOop)},' +               
+                f'travBuff={hex(self.travBuff)},' +     
+                f'level={str(self.level)},' +                 
+                f'retrievalFlags={str(self.retrievalFlags)},' +             
+                f'isRpc={str(self.isRpc)})')
