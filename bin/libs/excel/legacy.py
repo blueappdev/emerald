@@ -10,7 +10,7 @@
 import sys, getopt, os.path, shutil
 import xml.etree.ElementTree
 
-def error(*arguments):
+def warn(*arguments):
     print(*arguments, file=sys.stderr)
 
 def error(*arguments):
@@ -139,45 +139,36 @@ class XMLFileReader:
                 return value
         return None
 
-class LegacyExcelExtractor:
-    def processCommandLine(self, argv):
-        self.processArguments(argv[1:])
- 
-    def processArguments(self, arguments):
-        if len(arguments) == 0:
-            self.error('Missing arguments.')
-        for filename in arguments:
-            self.currentRootName, extension=os.path.splitext(filename)
-            if extension == '':
-                filename = filename+'.xml'
-            self.currentFilename = filename
-            self.processCurrentFilename()
+class Extractor:
+    def __init__(self, aFilename):
+        self.currentFilename = aFilename
 
-    def processCurrentFilename(self):
-        print('Process', self.currentFilename)
-        if os.path.exists(self.currentRootName):
-            shutil.rmtree(self.currentRootName)
+    def process(self):
+        self.currentRootName, extension = os.path.splitext(self.currentFilename)
+        if extension not in ['.xlsx', '.xml', '.xls' ]:
+            error('Unsupported extension', extension)
+        extension = extension[1:]
         workbook = XMLFileReader(self.currentFilename).getWorkbook()
-        for sheet in workbook.sheets:
-            self.processWorksheet(sheet)
+        self.outputFilename = self.currentRootName + '_' + extension + '_extract.txt'
+        with open(self.outputFilename, 'w') as self.outputStream:
+            for sheet in workbook.sheets:
+                self.processWorksheet(sheet)
 
     def processWorksheet(self, sheet):
-            print('Sheet', sheet.name)
-            for row in sheet.rows:
-                first = True
-                for cell in row.cells:
-                    if first:
-                        first = False
-                    else:
-                        print('\t', sep='', end='')
-                    value = cell.formula
-                    if value is None:
-                        value = cell.value
-                    if value is None:
-                        value = ''
-                    print(value, end='')
-                print()
+        print('Sheet', sheet.name, file=self.outputStream)
+        for row in sheet.rows:
+            first = True
+            for cell in row.cells:
+                if first:
+                    first = False
+                else:
+                    print('\t', sep='', end='', file=self.outputStream)
+                value = cell.formula
+                if value is None:
+                    value = cell.value
+                if value is None:
+                    value = ''
+                print(value, end='', file=self.outputStream)
+            print(file=self.outputStream)
 
-if __name__ == '__main__':
-    LegacyExcelExtractor().processCommandLine(sys.argv)
 
