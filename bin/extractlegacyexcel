@@ -1,0 +1,183 @@
+#!/usr/bin/python3
+#
+# extractlegacyexcel (XML Spreasheet 2003)
+# Modern version of Excel are not supported.
+#
+# Extract raw data from excel, disregarding all formatting.
+# Formulas are preserved.
+#
+
+import sys, getopt, os.path, shutil
+import xml.etree.ElementTree
+
+def error(*arguments):
+    print(*arguments, file=sys.stderr)
+
+def error(*arguments):
+    warn(*arguments)
+    sys.exit(2)
+
+class Workbook:
+    def __init__(self):
+        self.sheets = []
+
+    def addSheet(self, aSheet):
+        self.sheets.append(aSheet)
+
+class Sheet:
+    def __init__(self, name):
+        self.rows = []
+        self.name = name
+
+    def addRow(self,aRow):
+        self.rows.append(aRow)
+
+class Row:
+    def __init__(self):
+        self.cells = []
+
+    def addCell(self, aCell):
+        self.cells.append(aCell)
+
+class Cell:
+    def __init__(self):
+        self.formula = None
+        self.value = None
+
+    def setFormula(self, aString):
+        self.formula = aString
+
+    def setValue(self, aString):
+        self.value = aString
+
+class XMLFileReader:
+    def __init__(self, aFilename):
+        self.filename = aFilename
+
+    def getWorkbook(self):
+        self.workbook = Workbook()
+        tree = xml.etree.ElementTree.parse(self.filename)
+        root = tree.getroot()
+        for each in root:
+            if self.hasTag(each, 'Worksheet'):
+                self.processWorksheet(each)
+        return self.workbook
+
+    def processWorksheet(self, anElement):
+        name = self.getAttribute(anElement, 'Name')
+        self.currentSheet = Sheet(name)
+        self.workbook.addSheet(self.currentSheet)
+        for each in anElement:
+            if self.hasTag(each, 'Table'):
+                self.processTable(each)
+
+    def processTable(self, anElement):
+        for each in anElement:
+            if self.hasTag(each, 'Row'):
+                self.processRow(each)
+
+    def processRow(self, anElement):
+        index = self.getAttribute(anElement, 'Index')
+        if index is not None:
+            assert index.isdigit(), 'numeric row index expected'
+            index = int(index)
+            assert index > len(self.currentSheet.rows)
+            for i in range(len(self.currentSheet.rows), index-1):
+                self.currentSheet.addRow(Row())
+        self.currentRow = Row()
+        self.currentSheet.addRow(self.currentRow)
+        for each in anElement:
+            if self.hasTag(each, 'Cell'):
+                self.processCell(each)
+
+    def processCell(self, anElement):
+        self.processCellIndex(anElement)
+        self.currentCell=Cell()
+        self.currentRow.addCell(self.currentCell)
+        self.currentCell.setFormula(self.getAttribute(anElement, 'Formula'))
+        for each in anElement:
+            if self.hasTag(each, 'Data'):
+                self.processData(each)
+        self.processCellMergeAcross(anElement)
+
+    def processCellIndex(self, anElement):
+        index = self.getAttribute(anElement, 'Index')
+        if index is None:
+            return
+        assert index.isdigit(), 'numeric column index expected'
+        index = int(index)
+        assert index > len(self.currentRow.cells)
+        for i in range(len(self.currentRow.cells), index-1):
+            self.currentRow.addCell(Cell())
+
+    def processCellMergeAcross(self, anElement):
+        mergeAcross = self.getAttribute(anElement, 'MergeAcross')
+        if mergeAcross is None:
+            return
+        assert mergeAcross.isdigit(), 'numeric merge across expected'
+        mergeAcross = int(mergeAcross)
+        assert mergeAcross >= 1
+        for i in range(mergeAcross):
+            self.currentRow.addCell(Cell())
+
+    def processData(self, anElement):
+        #type = self.getAttribute(anElement, 'Type')
+        value = anElement.text
+        self.currentCell.setValue(value)
+
+    def hasTag(self, anElement, tagName):
+        return self.strippedTag(anElement.tag) == tagName
+
+    def strippedTag(self, aString):
+        tokens = aString.split('}')
+        assert len(tokens) == 2
+        return tokens[-1]
+                    
+    def getAttribute(self, anElement, aString):
+        for key, value in anElement.items():
+            if self.strippedTag(key) == aString:
+                return value
+        return None
+
+class LegacyExcelExtractor:
+    def processCommandLine(self, argv):
+        self.processArguments(argv[1:])
+ 
+    def processArguments(self, arguments):
+        if len(arguments) == 0:
+            self.error('Missing arguments.')
+        for filename in arguments:
+            self.currentRootName, extension=os.path.splitext(filename)
+            if extension == '':
+                filename = filename+'.xml'
+            self.currentFilename = filename
+            self.processCurrentFilename()
+
+    def processCurrentFilename(self):
+        print('Process', self.currentFilename)
+        if os.path.exists(self.currentRootName):
+            shutil.rmtree(self.currentRootName)
+        workbook = XMLFileReader(self.currentFilename).getWorkbook()
+        for sheet in workbook.sheets:
+            self.processWorksheet(sheet)
+
+    def processWorksheet(self, sheet):
+            print('Sheet', sheet.name)
+            for row in sheet.rows:
+                first = True
+                for cell in row.cells:
+                    if first:
+                        first = False
+                    else:
+                        print('\t', sep='', end='')
+                    value = cell.formula
+                    if value is None:
+                        value = cell.value
+                    if value is None:
+                        value = ''
+                    print(value, end='')
+                print()
+
+if __name__ == '__main__':
+    LegacyExcelExtractor().processCommandLine(sys.argv)
+

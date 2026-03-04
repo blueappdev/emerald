@@ -8,7 +8,6 @@
 import sys, zipfile, os, os.path, shutil, xml.sax, re
 from datetime import datetime, timedelta
 
-
 class ExcelExtractor:
     def warning(self, *messages):
         print(*messages)
@@ -21,6 +20,8 @@ class ExcelExtractor:
         self.processArguments(argv[1:])
  
     def processArguments(self, arguments):
+        if len(arguments) == 0:
+            self.error('Missing arguments.')
         for filename in arguments:
             if not filename.endswith('.xlsx'):
                 filename = filename + '.xlsx'
@@ -84,6 +85,10 @@ class WorksheetHandler(xml.sax.handler.ContentHandler):
         self.sharedStrings = sharedStrings
         self.numberFormats = numberFormats
         self.cellFormats = cellFormats
+        self.inCell = False
+        self.cellHasFormula = False
+        self.unusedElements = ['worksheet', 'dimension', 'sheetViews', 'sheetView',
+                'sheetFormatPr', 'sheetData', 'pageMargins']
 
     def startDocument(self):
         self.names = []
@@ -91,17 +96,33 @@ class WorksheetHandler(xml.sax.handler.ContentHandler):
 
     def startElement(self, name, attributes):
         self.names.append(name)
-        if name == 'row':
+        if name in self.unusedElements:
+            pass
+        elif name == 'row':
             self.startRowElement(attributes)
         elif name == 'c':
             self.startCellElement(attributes)
+        elif name == 'f':
+            self.startFormulaElement(attributes)
+        elif name == 'v':
+            pass
+        else:
+            raise Exception('unsupported start element', name)
 
     def endElement(self, name):
         assert self.names[-1] == name, 'unexpected end element name'
-        if name == 'row':
+        if name in self.unusedElements:
+            pass
+        elif name == 'row':
             self.endRowElement()
         elif name == 'c':
             self.endCellElement()
+        elif name == 'f':
+            self.endFormulaElement()
+        elif name == 'v':
+            pass
+        else:
+            raise Exception('unsupported end element', name)
         self.names = self.names[:-1]       
 
     def startRowElement(self, attributes):
@@ -140,6 +161,7 @@ class WorksheetHandler(xml.sax.handler.ContentHandler):
         self.currentCellType = None
         self.currentCellReference = None
         self.currentCellStyleNumber = None
+        self.inCell = True
         for key, value in attributes.items():
             # r=A1, s=4 (pointer for styles), t=s (type=str)
             if key == 't':
@@ -173,7 +195,14 @@ class WorksheetHandler(xml.sax.handler.ContentHandler):
         else:
             value = self.currentValue
         self.appendCell(value)
+        self.inCell = False
+
+    def startFormulaElement(self, attributes):
+        pass
     
+    def endFormulaElement(self):
+        pass
+
     def isStringCell(self):
         return self.currentCellType == 's'
     
