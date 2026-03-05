@@ -1,5 +1,6 @@
 #!/usr/bin/bash
 #
+# compareexcel
 # unpack and compare two excel files
 #
 

@@ -1,0 +1,39 @@
+#!/usr/bin/bash
+#
+# compareexcelextract
+#
+# Extract data from two Excel files and compare them.
+# All formatting is ignored.
+#
+
+set -e
+
+if [ "$#" -ne 2 ]
+then
+    echo "Two arguments expected"
+    exit 2
+fi
+
+file1=$1
+file2=$2
+
+if [ ! -f $file1 ]
+then
+    echo "$file1 not found"
+    exit 2
+fi
+
+if [ ! -f $file2 ]
+then
+    echo "$file2 not found"
+    exit 2
+fi
+
+extractexcel $file1
+extractexcel $file2
+
+extract1="${file1//./_}_extract.txt"
+extract2="${file2//./_}_extract.txt"
+
+xdiff $extract1 $extract2
+
