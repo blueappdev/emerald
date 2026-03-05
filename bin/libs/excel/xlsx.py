@@ -92,8 +92,6 @@ class WorksheetHandler(xml.sax.handler.ContentHandler):
         self.inValueElement = False
         self.inFormulaElement = False
         self.cellHasFormula = False
-        self.unusedElements = ['worksheet', 'dimension', 'sheetViews', 'sheetView',
-                'sheetFormatPr', 'sheetData', 'pageMargins', 'mergeCells', 'mergeCell']
 
     def startDocument(self):
         self.currentRowNumber = 1
@@ -101,9 +99,7 @@ class WorksheetHandler(xml.sax.handler.ContentHandler):
     def startElement(self, name, attributes):
         #print('startElement', name)
         self.names.append(name)
-        if name in self.unusedElements:
-            pass
-        elif name == 'row':
+        if name == 'row':
             self.startRowElement(attributes)
         elif name == 'c':
             self.startCellElement(attributes)
@@ -111,14 +107,10 @@ class WorksheetHandler(xml.sax.handler.ContentHandler):
             self.startFormulaElement(attributes)
         elif name == 'v':
             self.startValueElement(attributes)
-        else:
-            raise Exception('unsupported start element', name)
 
     def endElement(self, name):
         #print('endElement', name)
-        if name in self.unusedElements:
-            pass
-        elif name == 'row':
+        if name == 'row':
             self.endRowElement()
         elif name == 'c':
             self.endCellElement()
@@ -126,8 +118,6 @@ class WorksheetHandler(xml.sax.handler.ContentHandler):
             self.endFormulaElement()
         elif name == 'v':
             self.endValueElement()
-        else:
-            raise Exception('unsupported end element', name)
         assert self.names.pop() == name
 
     def startRowElement(self, attributes):
@@ -146,10 +136,6 @@ class WorksheetHandler(xml.sax.handler.ContentHandler):
                 assert rowNumber == self.currentRowNumber
             elif key == 'spans':
                 self.rowSpanBegin, self.rowSpanEnd = [int(each) for each in value.split(':')]
-            elif key in ['ht', 'customHeight']:
-                pass
-            else:
-                raise Exception(f'unexpected row attribute {key}={value}')
         assert self.rowSpanBegin is not None
         assert self.rowSpanEnd is not None
         assert self.rowSpanEnd > self.rowSpanBegin
@@ -321,16 +307,15 @@ class SharedStringsHandler(xml.sax.handler.ContentHandler):
 
     def startTextElement(self):
         self.inTextElement = True
-        self.currentString = None
+        self.currentString = ''
 
     def endTextElement(self):
-        assert self.currentString is not None
         self.sharedStrings.append(self.currentString)
         self.inTextElement = False
 
     def characters(self, str):
         if self.inTextElement:
-            assert self.currentString is None
+            assert self.currentString == '' 
             self.currentString = str
         else:
             assert str.isspace()

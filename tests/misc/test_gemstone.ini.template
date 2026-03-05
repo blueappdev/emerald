@@ -2,7 +2,7 @@
 # test_gemstone.ini.template
 #
 
-gemstone]
+[gemstone]
 gem_host=localhost
 stone=gs64stone
 gs_user=
