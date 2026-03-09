@@ -4,12 +4,16 @@
 
 __pycache__/
 data/
+examples/
 
 *.pyc
 *.swp
 *.log
 *.tmp
 *.ini
+
+# Libreoffice documents
+.~lock*
 
 v
 r
