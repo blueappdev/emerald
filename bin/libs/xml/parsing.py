@@ -9,6 +9,7 @@ class SimpleXMLParser:
     def __init__(self, handler):
         self.handler = handler
         self.lineNumber = 1
+        self.text = io.StringIO()
 
     def next(self):
         self.ch = self.stream.read(1)
@@ -110,6 +111,7 @@ class SimpleXMLParser:
                         self.next()
                     else:   
                         self.unexpectedCharacter()     
+                    self.text = io.StringIO()
                 elif self.ch == '/':
                     self.next()
                     tag = io.StringIO()
@@ -122,11 +124,10 @@ class SimpleXMLParser:
                     self.unexpectedCharacter()
                 self.skipWhite()
             elif self.ch != '>':
-                text = io.StringIO()
                 while self.ch != '<' and self.ch != '':
-                    text.write(self.ch)
+                    self.text.write(self.ch)
                     self.next()
-                self.handler.characters(text.getvalue())
+                self.handler.characters(self.text.getvalue())
             else:       
                 self.unexpectedCharacter()
         if self.ch != '':
@@ -134,6 +135,7 @@ class SimpleXMLParser:
 
     def skipWhite(self):
         while self.ch.isspace():
+            self.text.write(self.ch)
             self.next()
 
     def unexpectedCharacter(self, message=None):

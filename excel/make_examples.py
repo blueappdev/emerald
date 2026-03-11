@@ -308,3 +308,9 @@ worksheet.write(5,1,32)
 worksheet.write(5,2,102)
 worksheet.autofilter(2,0,5,2)
 workbook.close()
+
+# example14
+workbook = xlsxwriter.Workbook('examples/example14.xlsx')
+workbook.set_properties({'created': datetime.datetime(2020,1,1,12,0,0)})
+worksheet = workbook.add_worksheet('My Report')
+workbook.close()
