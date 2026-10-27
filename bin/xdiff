@@ -728,16 +728,21 @@ class DiffViewer(tk.Frame):
         # The event is considered representing a key,
         # which would modify the text, which is not desired.
         return "break"
-    
+        
+    def readLines(self, filename):
+        with open(filename) as stream:
+            lines = stream.readlines()
+        if len(lines) > 0 and not lines[-1].endswith('\n'):
+            lines[-1] += '\n'
+            lines.append('<Missing newline>\n')
+        return lines
+        
     def viewFiles(self, filename1, filename2):
         self.filename1 = filename1
         self.filename2 = filename2
 
-        with open(self.filename1) as stream:
-            self.leftLines = stream.readlines()
-
-        with open(self.filename2) as stream:
-            self.rightLines  = stream.readlines()
+        self.leftLines = self.readFile(self.filename1)
+        self.rightLines = self.readFile(self.filename2)
 
         self.leftLabel.insert(tk.END, self.filename1)
         self.leftData=[[line, None] for line in self.leftLines]
